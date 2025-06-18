@@ -24,7 +24,7 @@ const BallComponent: React.FC<BallProps> = ({
   isInstantExplodeModeActive
 }) => {
   const sharedAction = () => {
-    if (!isExploding) { // Check local isExploding prop
+    if (!isExploding) { // Check local isExploding prop passed from GameScreen
       onBallClick(id);
     }
   };
@@ -36,14 +36,14 @@ const BallComponent: React.FC<BallProps> = ({
   };
 
   const handleTouchStart = (event: React.TouchEvent) => {
-    // Consider event.preventDefault() if it causes issues with subsequent clicks
+    // event.preventDefault(); // Consider if it causes issues with subsequent clicks/scrolls
     if (isInstantExplodeModeActive) {
       sharedAction();
     }
   };
 
   const handleClick = (event: React.MouseEvent) => {
-    event.stopPropagation();
+    event.stopPropagation(); // Prevent click from bubbling up to game area if needed
     sharedAction(); // Always call sharedAction on click
   };
 
@@ -57,7 +57,7 @@ const BallComponent: React.FC<BallProps> = ({
     transform: 'translate(-50%, -50%)',
     cursor: isInstantExplodeModeActive ? 'crosshair' : 'pointer',
     boxShadow: '0px 2px 5px rgba(0,0,0,0.2)',
-    transition: 'top 0.05s linear',
+    transition: 'top 0.05s linear', // Smooth fall, consider removing if performance is an issue
   };
 
   if (color === 'rainbow-gradient') {
@@ -66,16 +66,16 @@ const BallComponent: React.FC<BallProps> = ({
     ballStyle.backgroundColor = color;
   }
 
-  if (isExploding) { // This is the prop passed from GameScreen
+  if (isExploding) { // This is the prop passed from GameScreen, managed by GameScreen's state
     return (
-      <div style={{
+      <div style={{ // Container for the explosion effect at the ball's last position
           left: `${x}%`,
           top: `${y}px`,
           width: `${radius * 2}px`,
           height: `${radius * 2}px`,
           position: 'absolute',
           transform: 'translate(-50%, -50%)',
-          pointerEvents: 'none'
+          pointerEvents: 'none' // Explosion should not be interactive
         }}
       >
         <ExplosionEffect color={color} size={radius * 2}/>
@@ -88,14 +88,16 @@ const BallComponent: React.FC<BallProps> = ({
       style={ballStyle}
       className={`${color === 'rainbow-gradient' ? 'rainbow-gradient' : ''}`}
       onClick={handleClick}
-      onMouseEnter={handleMouseEnter}
-      onTouchStart={handleTouchStart}
+      onMouseEnter={handleMouseEnter} // For instant explode mode on desktop
+      onTouchStart={handleTouchStart} // For instant explode mode on touch devices
       role="button"
       aria-label="Falling ball"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(e as any);}}
+      tabIndex={0} // Make it focusable
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(e as any);}} // Accessibility for keyboard users
     />
   );
 };
 
 export default React.memo(BallComponent);
+
+    
