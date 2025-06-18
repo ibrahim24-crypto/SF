@@ -104,7 +104,17 @@ body {
 
 .life-lost {
   animation: life-lost-animation 0.5s forwards;
-  /* Ensure background is transparent at the end to not show a static red ball post-animation */
   background-color: transparent !important; 
   border-color: transparent !important;
+}
+
+@keyframes pulse-ball {
+  0% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.5); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+.ball-pulse-animation {
+  animation: pulse-ball 0.3s ease-in-out;
+  transform-origin: center;
 }

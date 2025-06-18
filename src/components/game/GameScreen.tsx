@@ -38,7 +38,7 @@ const GameScreen: React.FC = () => {
   const [livesState, setLivesState] = useState<LifeState[]>([]);
   const [missedBallStreak, setMissedBallStreak] = useState(0);
   const [clickedBallStreak, setClickedBallStreak] = useState(0);
-  const [balls, setBalls] = useState<Omit<BallData, 'onBallClick' | 'isInstantExplodeModeActive'>[]>([]);
+  const [balls, setBalls] = useState<Omit<BallData, 'onBallClick' | 'isInstantExplodeModeActive' | 'ballPulseTrigger'>[]>([]);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [isBonusAnimating, setIsBonusAnimating] = useState(false);
@@ -47,6 +47,7 @@ const GameScreen: React.FC = () => {
   const [isInstantExplodeModeActive, setIsInstantExplodeModeActive] = useState(false);
   const [showInstantExplodeBanner, setShowInstantExplodeBanner] = useState(false);
   const [scoreAreaClickCount, setScoreAreaClickCount] = useState(0);
+  const [ballPulseAnimationTrigger, setBallPulseAnimationTrigger] = useState(0);
 
 
   const gameAreaRef = useRef<HTMLDivElement>(null);
@@ -150,7 +151,7 @@ const GameScreen: React.FC = () => {
   const handleBallMiss = useCallback((ballId: string) => {
     if (gameOver || explodingInProgressRef.current.has(ballId)) return;
 
-    setBalls(prev => prev.filter(b => b.id !== ballId)); // Remove the missed ball immediately
+    setBalls(prev => prev.filter(b => b.id !== ballId));
 
     setMissedBallStreak((currentStreakMbs) => {
       const newCalculatedStreak = currentStreakMbs + 1;
@@ -202,7 +203,7 @@ const GameScreen: React.FC = () => {
     const gameAreaWidth = gameAreaRef.current.offsetWidth;
     if (gameAreaWidth === 0) return;
 
-    const newBallData: Omit<BallData, 'onBallClick' | 'isInstantExplodeModeActive'> = {
+    const newBallData: Omit<BallData, 'onBallClick' | 'isInstantExplodeModeActive' | 'ballPulseTrigger'> = {
       id: `ball-${Date.now()}-${Math.random()}`,
       x: Math.random() * (100 - (BALL_RADIUS * 2 * 100 / gameAreaWidth)) + (BALL_RADIUS * 100 / gameAreaWidth),
       y: -BALL_RADIUS,
@@ -241,13 +242,13 @@ const GameScreen: React.FC = () => {
             if (ball.isExploding) return ball;
             const newY = ball.y + BALL_FALL_SPEED;
             if (newY > gameAreaHeight + ball.radius) {
-              if (!explodingInProgressRef.current.has(ball.id)) { // Check if not already being handled by click
+              if (!explodingInProgressRef.current.has(ball.id)) {
                 handleBallMiss(ball.id);
               }
               return null;
             }
             return { ...ball, y: newY };
-          }).filter(Boolean) as Omit<BallData, 'onBallClick' | 'isInstantExplodeModeActive'>[]
+          }).filter(Boolean) as Omit<BallData, 'onBallClick' | 'isInstantExplodeModeActive' | 'ballPulseTrigger'>[]
       );
       animationFrameId = requestAnimationFrame(gameLoop);
     };
@@ -261,7 +262,8 @@ const GameScreen: React.FC = () => {
     initializeLives(INITIAL_LIVES);
     setMissedBallStreak(0);
     setClickedBallStreak(0);
-    setScoreAreaClickCount(0); // Reset secret click count
+    setScoreAreaClickCount(0);
+    setBallPulseAnimationTrigger(0); // Reset pulse trigger
     setBalls([]);
     setGameOver(false);
     explodingInProgressRef.current.clear();
@@ -273,13 +275,13 @@ const GameScreen: React.FC = () => {
     }
     setLocalHighScore(newLocalHighScore);
 
-    const instantMode = Math.random() < 0.1; // 10% chance for random activation
+    const instantMode = Math.random() < 0.1;
     setIsInstantExplodeModeActive(instantMode);
     if (instantMode) {
       setShowInstantExplodeBanner(true);
       toast({ title: "⚡ Instant Explode Mode Active! ⚡", description: "Hover or tap balls to pop them instantly!", duration: 5000 });
     } else {
-      setShowInstantExplodeBanner(false); // Ensure banner is hidden if not active
+      setShowInstantExplodeBanner(false);
     }
   };
 
@@ -296,23 +298,19 @@ const GameScreen: React.FC = () => {
   const handleScoreAreaClick = useCallback(() => {
     if (!gameStarted || gameOver || isInstantExplodeModeActive) return;
 
-    const currentNonExplodingLives = livesState.filter(l => !l.exploding).length;
+    setBallPulseAnimationTrigger(prev => prev + 1); // Trigger animation on every click
 
-    if (currentNonExplodingLives === 1) {
-      setScoreAreaClickCount(prevCount => {
-        const newCount = prevCount + 1;
-        if (newCount >= SECRET_CLICK_TARGET) {
-          setIsInstantExplodeModeActive(true);
-          setShowInstantExplodeBanner(true);
-          toast({ title: "🤫 Secret Activated!", description: "Instant Explode Mode is ON!", duration: 5000 });
-          return 0; // Reset count
-        }
-        return newCount;
-      });
-    } else {
-      setScoreAreaClickCount(0); // Reset if not at 1 life
-    }
-  }, [gameStarted, gameOver, isInstantExplodeModeActive, livesState, toast, setIsInstantExplodeModeActive, setShowInstantExplodeBanner, setScoreAreaClickCount]);
+    setScoreAreaClickCount(prevCount => {
+      const newCount = prevCount + 1;
+      if (newCount >= SECRET_CLICK_TARGET) {
+        setIsInstantExplodeModeActive(true);
+        setShowInstantExplodeBanner(true);
+        toast({ title: "🤫 Secret Activated!", description: "Instant Explode Mode is ON!", duration: 5000 });
+        return 0; // Reset count after activation
+      }
+      return newCount;
+    });
+  }, [gameStarted, gameOver, isInstantExplodeModeActive, toast, setIsInstantExplodeModeActive, setShowInstantExplodeBanner, setScoreAreaClickCount, setBallPulseAnimationTrigger]);
 
 
   if (!isClient) {
@@ -360,6 +358,7 @@ const GameScreen: React.FC = () => {
           {...ball}
           onBallClick={handleBallClick}
           isInstantExplodeModeActive={isInstantExplodeModeActive}
+          ballPulseTrigger={ballPulseAnimationTrigger}
         />
       ))}
 

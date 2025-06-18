@@ -1,6 +1,7 @@
 
 import React from 'react';
 import ExplosionEffect from './ExplosionEffect';
+import { cn } from '@/lib/utils';
 
 export interface BallProps {
   id: string;
@@ -8,9 +9,10 @@ export interface BallProps {
   y: number;
   radius: number;
   color: string;
-  onBallClick: (id: string) => void; // Simplified: no eventType
+  onBallClick: (id: string) => void;
   isExploding: boolean;
   isInstantExplodeModeActive?: boolean;
+  ballPulseTrigger?: number;
 }
 
 const BallComponent: React.FC<BallProps> = ({
@@ -21,10 +23,25 @@ const BallComponent: React.FC<BallProps> = ({
   color,
   onBallClick,
   isExploding,
-  isInstantExplodeModeActive
+  isInstantExplodeModeActive,
+  ballPulseTrigger,
 }) => {
+  const [applyPulse, setApplyPulse] = React.useState(false);
+  const prevPulseTriggerRef = React.useRef<number | undefined>(ballPulseTrigger);
+
+  React.useEffect(() => {
+    if (ballPulseTrigger !== undefined && ballPulseTrigger !== prevPulseTriggerRef.current && ballPulseTrigger > 0) {
+      setApplyPulse(true);
+      const timer = setTimeout(() => {
+        setApplyPulse(false);
+      }, 300); // Duration of pulse animation (must match CSS)
+      prevPulseTriggerRef.current = ballPulseTrigger;
+      return () => clearTimeout(timer);
+    }
+  }, [ballPulseTrigger]);
+
   const sharedAction = () => {
-    if (!isExploding) { // Check local isExploding prop passed from GameScreen
+    if (!isExploding) {
       onBallClick(id);
     }
   };
@@ -36,15 +53,14 @@ const BallComponent: React.FC<BallProps> = ({
   };
 
   const handleTouchStart = (event: React.TouchEvent) => {
-    // event.preventDefault(); // Consider if it causes issues with subsequent clicks/scrolls
     if (isInstantExplodeModeActive) {
       sharedAction();
     }
   };
 
   const handleClick = (event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent click from bubbling up to game area if needed
-    sharedAction(); // Always call sharedAction on click
+    event.stopPropagation();
+    sharedAction();
   };
 
   const ballStyle: React.CSSProperties = {
@@ -57,7 +73,7 @@ const BallComponent: React.FC<BallProps> = ({
     transform: 'translate(-50%, -50%)',
     cursor: isInstantExplodeModeActive ? 'crosshair' : 'pointer',
     boxShadow: '0px 2px 5px rgba(0,0,0,0.2)',
-    transition: 'top 0.05s linear', // Smooth fall, consider removing if performance is an issue
+    transition: 'top 0.05s linear',
   };
 
   if (color === 'rainbow-gradient') {
@@ -66,16 +82,16 @@ const BallComponent: React.FC<BallProps> = ({
     ballStyle.backgroundColor = color;
   }
 
-  if (isExploding) { // This is the prop passed from GameScreen, managed by GameScreen's state
+  if (isExploding) {
     return (
-      <div style={{ // Container for the explosion effect at the ball's last position
+      <div style={{
           left: `${x}%`,
           top: `${y}px`,
           width: `${radius * 2}px`,
           height: `${radius * 2}px`,
           position: 'absolute',
           transform: 'translate(-50%, -50%)',
-          pointerEvents: 'none' // Explosion should not be interactive
+          pointerEvents: 'none'
         }}
       >
         <ExplosionEffect color={color} size={radius * 2}/>
@@ -86,18 +102,19 @@ const BallComponent: React.FC<BallProps> = ({
   return (
     <div
       style={ballStyle}
-      className={`${color === 'rainbow-gradient' ? 'rainbow-gradient' : ''}`}
+      className={cn(
+        color === 'rainbow-gradient' ? 'rainbow-gradient' : '',
+        applyPulse && !isExploding && 'ball-pulse-animation'
+      )}
       onClick={handleClick}
-      onMouseEnter={handleMouseEnter} // For instant explode mode on desktop
-      onTouchStart={handleTouchStart} // For instant explode mode on touch devices
+      onMouseEnter={handleMouseEnter}
+      onTouchStart={handleTouchStart}
       role="button"
       aria-label="Falling ball"
-      tabIndex={0} // Make it focusable
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(e as any);}} // Accessibility for keyboard users
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleClick(e as any);}}
     />
   );
 };
 
 export default React.memo(BallComponent);
-
-    
