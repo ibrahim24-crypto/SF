@@ -9,11 +9,11 @@ import { Button } from '@/components/ui/button';
 
 const INITIAL_LIVES = 5;
 const BALL_RADIUS = 20;
-const BALL_FALL_SPEED = 2; 
-const BALL_GENERATION_INTERVAL = 1500; 
-const MISSED_BALLS_PER_LIFE_LOSS = 5; // Changed from 3 to 5
-const CLICKED_BALLS_PER_LIFE_GAIN = 50;
-const EXPLOSION_DURATION = 300; 
+const BALL_FALL_SPEED = 2;
+const BALL_GENERATION_INTERVAL = 1500;
+const MISSED_BALLS_PER_LIFE_LOSS = 5; 
+const CLICKED_BALLS_PER_LIFE_GAIN = 30; // Changed from 50 to 30
+const EXPLOSION_DURATION = 300;
 const HIGH_SCORE_KEY = 'skyfallBoomerHighScore';
 
 interface LifeState {
@@ -25,7 +25,7 @@ const GameScreen: React.FC = () => {
   const [isClient, setIsClient] = useState(false);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  
+
   const [livesState, setLivesState] = useState<LifeState[]>([]);
   const [missedBallStreak, setMissedBallStreak] = useState(0);
   const [clickedBallStreak, setClickedBallStreak] = useState(0);
@@ -45,11 +45,11 @@ const GameScreen: React.FC = () => {
       setHighScore(parseInt(storedHighScore, 10));
     } else {
       console.log("No high score found in localStorage. Initializing to 0.");
-      setHighScore(0); 
+      setHighScore(0);
     }
     initializeLives(INITIAL_LIVES);
   }, []);
-  
+
   const initializeLives = (numLives: number) => {
     setLivesState(Array.from({ length: numLives }, (_, i) => ({ id: `life-${i}-${Date.now()}`, exploding: false })));
   };
@@ -66,7 +66,7 @@ const GameScreen: React.FC = () => {
       const newStreak = cbs + 1;
       if (newStreak > 0 && newStreak % CLICKED_BALLS_PER_LIFE_GAIN === 0) {
         setLivesState(prevLives => {
-          if (prevLives.filter(l => !l.exploding).length >= INITIAL_LIVES * 2) return prevLives; 
+          if (prevLives.filter(l => !l.exploding).length >= INITIAL_LIVES * 2) return prevLives;
 
           const newLifeId = `life-${prevLives.length}-${Date.now()}`;
           const livesElements = document.querySelectorAll('[aria-label="Life remaining"]');
@@ -75,7 +75,7 @@ const GameScreen: React.FC = () => {
           if (lastLifeElement) {
             const livesDisplayRect = lastLifeElement.parentElement?.parentElement?.getBoundingClientRect();
             if (livesDisplayRect) {
-                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8; 
+                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8;
                 const targetY = livesDisplayRect.top + livesDisplayRect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
@@ -89,7 +89,7 @@ const GameScreen: React.FC = () => {
                 const targetY = rect.top + rect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
-                setBonusBallTarget({ x: window.innerWidth - 100, y: 50 }); 
+                setBonusBallTarget({ x: window.innerWidth - 100, y: 50 });
             }
           }
 
@@ -98,17 +98,19 @@ const GameScreen: React.FC = () => {
             setLivesState(prev => [...prev, { id: newLifeId, exploding: false }]);
             setIsBonusAnimating(false);
             setBonusBallTarget(null);
-          }, 700); 
-          return prevLives; 
+          }, 700);
+          return prevLives;
         });
+        return 0; // Reset streak after gaining a life
       }
       return newStreak;
     });
-  }, [gameOver, livesState]); // Added livesState as it's used in the length check
+  }, [gameOver, CLICKED_BALLS_PER_LIFE_GAIN, INITIAL_LIVES]);
+
 
   const handleBallMiss = useCallback((ballId: string) => {
-    if (gameOver) return; 
-    
+    if (gameOver) return;
+
     setMissedBallStreak((mbs) => {
       const newStreak = mbs + 1;
       if (newStreak > 0 && newStreak % MISSED_BALLS_PER_LIFE_LOSS === 0) {
@@ -117,7 +119,7 @@ const GameScreen: React.FC = () => {
           if (firstNonExplodingLifeIndex !== -1) {
             const updatedLives = [...prevLives];
             updatedLives[firstNonExplodingLifeIndex] = { ...updatedLives[firstNonExplodingLifeIndex], exploding: true };
-            
+
             const remainingLives = updatedLives.filter(l => !l.exploding).length;
             if (remainingLives === 0) {
               console.log(`Game Over. Score: ${score}, Current High Score: ${highScore}`);
@@ -132,30 +134,30 @@ const GameScreen: React.FC = () => {
             }
             return updatedLives;
           }
-          return prevLives; 
+          return prevLives;
         });
-        return 0; 
+        return 0;
       }
       return newStreak;
     });
-  }, [gameOver, score, highScore]);
+  }, [gameOver, score, highScore, MISSED_BALLS_PER_LIFE_LOSS]);
 
   const getBallColor = useCallback((currentScore: number): string => {
     if (currentScore > 500) return 'rainbow-gradient';
     const TIER_SCORE = 30;
     const tier = Math.floor(currentScore / TIER_SCORE);
-    const colors = ['#FFFFFF', '#FFFF00', '#90EE90', '#ADD8E6', '#FFC0CB', '#E6E6FA', '#FFA500']; 
+    const colors = ['#FFFFFF', '#FFFF00', '#90EE90', '#ADD8E6', '#FFC0CB', '#E6E6FA', '#FFA500'];
     return colors[tier % colors.length] || '#FFFFFF';
   }, []);
 
   const generateBall = useCallback(() => {
     if (!gameAreaRef.current || !isClient || gameOver) return;
     const gameAreaWidth = gameAreaRef.current.offsetWidth;
-    if (gameAreaWidth === 0) return; 
+    if (gameAreaWidth === 0) return;
     const newBall: BallData = {
       id: `ball-${Date.now()}-${Math.random()}`,
-      x: Math.random() * (100 - (BALL_RADIUS * 2 * 100 / gameAreaWidth)) + (BALL_RADIUS * 100 / gameAreaWidth), 
-      y: -BALL_RADIUS, 
+      x: Math.random() * (100 - (BALL_RADIUS * 2 * 100 / gameAreaWidth)) + (BALL_RADIUS * 100 / gameAreaWidth),
+      y: -BALL_RADIUS,
       radius: BALL_RADIUS,
       color: getBallColor(score),
       onBallClick: handleBallClick,
@@ -176,26 +178,26 @@ const GameScreen: React.FC = () => {
     let animationFrameId: number;
     const gameLoop = () => {
       if (!gameAreaRef.current) {
-        animationFrameId = requestAnimationFrame(gameLoop); 
+        animationFrameId = requestAnimationFrame(gameLoop);
         return;
       }
       const gameAreaHeight = gameAreaRef.current.offsetHeight;
-      if (gameAreaHeight <= 0) { 
-        animationFrameId = requestAnimationFrame(gameLoop); 
+      if (gameAreaHeight <= 0) {
+        animationFrameId = requestAnimationFrame(gameLoop);
         return;
       }
 
       setBalls((prevBalls) =>
         prevBalls
           .map((ball) => {
-            if (ball.isExploding) return ball; 
+            if (ball.isExploding) return ball;
             const newY = ball.y + BALL_FALL_SPEED;
-            if (newY > gameAreaHeight + ball.radius) { 
-              handleBallMiss(ball.id); 
-              return null; 
+            if (newY > gameAreaHeight + ball.radius) {
+              handleBallMiss(ball.id);
+              return null;
             }
             return { ...ball, y: newY };
-          }).filter(Boolean) as BallData[] 
+          }).filter(Boolean) as BallData[]
       );
       animationFrameId = requestAnimationFrame(gameLoop);
     };
@@ -216,12 +218,12 @@ const GameScreen: React.FC = () => {
     if (storedHighScore) {
       const numStoredHighScore = parseInt(storedHighScore, 10);
       console.log(`Restarting game. Loaded high score from localStorage: ${numStoredHighScore}`);
-      if (numStoredHighScore !== highScore) { 
+      if (numStoredHighScore !== highScore) {
          setHighScore(numStoredHighScore);
       }
     } else {
       console.log("Restarting game. No high score in localStorage, ensuring it's 0.");
-      setHighScore(0); 
+      setHighScore(0);
     }
   };
 
@@ -233,11 +235,11 @@ const GameScreen: React.FC = () => {
       if (numStoredHighScore !== highScore) {
          setHighScore(numStoredHighScore);
       }
-    } else if (highScore !== 0) { 
+    } else if (highScore !== 0) {
         console.log(`Starting game. No stored high score, resetting highScore state from ${highScore} to 0.`);
         setHighScore(0);
     }
-    setGameStarted(true); 
+    setGameStarted(true);
     initializeLives(INITIAL_LIVES);
     setScore(0);
     setMissedBallStreak(0);
@@ -245,7 +247,7 @@ const GameScreen: React.FC = () => {
     setBalls([]);
     setGameOver(false);
   };
-  
+
   if (!isClient) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -272,7 +274,7 @@ const GameScreen: React.FC = () => {
   return (
     <div ref={gameAreaRef} className="relative w-screen h-screen overflow-hidden bg-background select-none" aria-label="Game Area">
       <GameHeader score={score} highScore={highScore} livesState={livesState} />
-      
+
       {balls.map((ball) => (
         <BallComponent key={ball.id} {...ball} onBallClick={handleBallClick} />
       ))}
@@ -283,13 +285,13 @@ const GameScreen: React.FC = () => {
           style={{
             width: `${BALL_RADIUS * 2}px`,
             height: `${BALL_RADIUS * 2}px`,
-            left: '50vw', 
-            top: '50vh', 
+            left: '50vw',
+            top: '50vh',
             animationName: 'big-ball-bonus-animation',
             animationDuration: '0.7s',
             animationTimingFunction: 'ease-out',
             animationFillMode: 'forwards',
-            '--target-x': `${bonusBallTarget.x}px`, 
+            '--target-x': `${bonusBallTarget.x}px`,
             '--target-y': `${bonusBallTarget.y}px`,
           } as React.CSSProperties}
         />
@@ -301,3 +303,5 @@ const GameScreen: React.FC = () => {
 };
 
 export default GameScreen;
+
+    

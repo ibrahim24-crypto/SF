@@ -4,6 +4,7 @@ import ScoreDisplay from './ScoreDisplay';
 import LivesDisplay from './LivesDisplay';
 import { Button } from '@/components/ui/button';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface LifeState {
   id: string;
@@ -25,7 +26,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState })
 
   return (
     <header className="absolute top-0 left-0 right-0 z-10 p-4">
-      <div className="flex items-center justify-end w-full mb-1"> {/* Reduced mb for tighter spacing */}
+      <div className="flex items-center justify-end w-full mb-1">
         <Button
           onClick={toggleCollapse}
           variant="ghost"
@@ -37,14 +38,20 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState })
           {isCollapsed ? <ChevronDown className="h-6 w-6" /> : <ChevronUp className="h-6 w-6" />}
         </Button>
       </div>
-      {!isCollapsed && (
-        <div className="flex items-start justify-between w-full transition-all duration-300 ease-in-out">
-          <ScoreDisplay score={score} highScore={highScore} />
-          <LivesDisplay livesState={livesState} />
-        </div>
-      )}
+      <div
+        className={cn(
+          "flex items-start justify-between w-full overflow-hidden transition-all duration-300 ease-in-out",
+          isCollapsed ? "max-h-0 opacity-0" : "max-h-48 opacity-100 mt-1" 
+        )}
+        aria-hidden={isCollapsed}
+      >
+        <ScoreDisplay score={score} highScore={highScore} />
+        <LivesDisplay livesState={livesState} />
+      </div>
     </header>
   );
 };
 
 export default GameHeader;
+
+    
