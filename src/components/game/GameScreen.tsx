@@ -36,6 +36,8 @@ const GameScreen: React.FC = () => {
   const [bonusBallTarget, setBonusBallTarget] = useState<{x: number, y: number} | null>(null);
 
   const gameAreaRef = useRef<HTMLDivElement>(null);
+  const processedMissesThisTick = useRef<Set<string>>(new Set());
+
 
   useEffect(() => {
     setIsClient(true);
@@ -75,20 +77,22 @@ const GameScreen: React.FC = () => {
           if (lastLifeElement) {
             const livesDisplayRect = lastLifeElement.parentElement?.parentElement?.getBoundingClientRect();
             if (livesDisplayRect) {
-                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8;
+                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8; // 8 for spacing between balls
                 const targetY = livesDisplayRect.top + livesDisplayRect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
                  setBonusBallTarget({ x: window.innerWidth - 100, y: 50 });
             }
           } else {
-            const livesContainer = document.querySelector('.flex.space-x-2.items-center.bg-primary\\/80');
+            // Fallback if no lives are currently displayed (e.g., very first life gain)
+            const livesContainer = document.querySelector('.flex.space-x-2.items-center.bg-primary\\/80'); // Class for LivesDisplay container
             if(livesContainer) {
                 const rect = livesContainer.getBoundingClientRect();
-                const targetX = rect.left + BALL_RADIUS * 0.6;
+                const targetX = rect.left + BALL_RADIUS * 0.6; // Approx first ball position
                 const targetY = rect.top + rect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
+                // Absolute fallback
                 setBonusBallTarget({ x: window.innerWidth - 100, y: 50 });
             }
           }
@@ -98,14 +102,14 @@ const GameScreen: React.FC = () => {
             setLivesState(prev => [...prev, { id: newLifeId, exploding: false }]);
             setIsBonusAnimating(false);
             setBonusBallTarget(null);
-          }, 700);
+          }, 700); // Corresponds to animation duration
           return prevLives;
         });
-        return 0;
+        return 0; // Reset streak
       }
       return newStreak;
     });
-  }, [gameOver, CLICKED_BALLS_PER_LIFE_GAIN, INITIAL_LIVES, setBalls, setScore, setClickedBallStreak, setLivesState, setIsBonusAnimating, setBonusBallTarget]);
+  }, [gameOver, setBalls, setScore, setClickedBallStreak, setLivesState, setIsBonusAnimating, setBonusBallTarget]);
 
 
   const handleBallMiss = useCallback((ballId: string) => {
@@ -119,8 +123,8 @@ const GameScreen: React.FC = () => {
       console.log(`  - Streak AFTER this miss (newCalculatedStreak): ${newCalculatedStreak}`);
       console.log(`  - THRESHOLD for life loss (MISSED_BALLS_PER_LIFE_LOSS): ${MISSED_BALLS_PER_LIFE_LOSS}`);
 
-      const conditionMet = (newCalculatedStreak % MISSED_BALLS_PER_LIFE_LOSS === 0);
-      console.log(`  - CHECKING: (${newCalculatedStreak} % ${MISSED_BALLS_PER_LIFE_LOSS} === 0) evaluates to: ${conditionMet}`);
+      const conditionMet = (newCalculatedStreak > 0 && newCalculatedStreak % MISSED_BALLS_PER_LIFE_LOSS === 0);
+      console.log(`  - CHECKING: (${newCalculatedStreak} > 0 && ${newCalculatedStreak} % ${MISSED_BALLS_PER_LIFE_LOSS} === 0) evaluates to: ${conditionMet}`);
 
       if (conditionMet) {
         console.log(`  - RESULT: Life loss condition MET. Losing a life. Streak will be reset to 0.`);
@@ -153,27 +157,27 @@ const GameScreen: React.FC = () => {
         return newCalculatedStreak; // Increment streak
       }
     });
-  }, [gameOver, score, highScore, MISSED_BALLS_PER_LIFE_LOSS, setLivesState, setMissedBallStreak, setHighScore, setGameOver]);
+  }, [gameOver, score, highScore, setLivesState, setMissedBallStreak, setHighScore, setGameOver]);
 
   const getBallColor = useCallback((currentScore: number): string => {
-    if (currentScore > 500) return 'rainbow-gradient';
-    const TIER_SCORE = 30;
+    if (currentScore > 500) return 'rainbow-gradient'; // Example: Rainbow ball after 500 points
+    const TIER_SCORE = 30; // Change color every 30 points
     const tier = Math.floor(currentScore / TIER_SCORE);
-    const colors = ['#FFFFFF', '#FFFF00', '#90EE90', '#ADD8E6', '#FFC0CB', '#E6E6FA', '#FFA500'];
-    return colors[tier % colors.length] || '#FFFFFF';
+    const colors = ['#FFFFFF', '#FFFF00', '#90EE90', '#ADD8E6', '#FFC0CB', '#E6E6FA', '#FFA500']; // Cycle through these colors
+    return colors[tier % colors.length] || '#FFFFFF'; // Default to white if something goes wrong
   }, []);
 
   const generateBall = useCallback(() => {
     if (!gameAreaRef.current || !isClient || gameOver) return;
     const gameAreaWidth = gameAreaRef.current.offsetWidth;
-    if (gameAreaWidth === 0) return;
+    if (gameAreaWidth === 0) return; // Avoid division by zero if gameArea not rendered
     const newBall: BallData = {
       id: `ball-${Date.now()}-${Math.random()}`,
-      x: Math.random() * (100 - (BALL_RADIUS * 2 * 100 / gameAreaWidth)) + (BALL_RADIUS * 100 / gameAreaWidth),
-      y: -BALL_RADIUS,
+      x: Math.random() * (100 - (BALL_RADIUS * 2 * 100 / gameAreaWidth)) + (BALL_RADIUS * 100 / gameAreaWidth), // x in %
+      y: -BALL_RADIUS, // Start above screen
       radius: BALL_RADIUS,
       color: getBallColor(score),
-      onBallClick: handleBallClick,
+      onBallClick: handleBallClick, // Passed down
       isExploding: false,
     };
     setBalls((prevBalls) => [...prevBalls, newBall]);
@@ -189,13 +193,17 @@ const GameScreen: React.FC = () => {
   useEffect(() => {
     if (!gameStarted || gameOver || !isClient) return;
     let animationFrameId: number;
+
     const gameLoop = () => {
+      // Reset for this tick, ensures handleBallMiss is called once per ball miss event within this tick
+      processedMissesThisTick.current.clear();
+
       if (!gameAreaRef.current) {
         animationFrameId = requestAnimationFrame(gameLoop);
         return;
       }
       const gameAreaHeight = gameAreaRef.current.offsetHeight;
-      if (gameAreaHeight <= 0) {
+      if (gameAreaHeight <= 0) { // Ensure game area has valid height
           animationFrameId = requestAnimationFrame(gameLoop);
           return;
       }
@@ -203,14 +211,17 @@ const GameScreen: React.FC = () => {
       setBalls((prevBalls) =>
         prevBalls
           .map((ball) => {
-            if (ball.isExploding) return ball;
+            if (ball.isExploding) return ball; // Keep exploding balls until their own timeout removes them
             const newY = ball.y + BALL_FALL_SPEED;
-            if (newY > gameAreaHeight + ball.radius) {
-              handleBallMiss(ball.id);
-              return null;
+            if (newY > gameAreaHeight + ball.radius) { // Ball is off-screen
+              if (!processedMissesThisTick.current.has(ball.id)) {
+                handleBallMiss(ball.id);
+                processedMissesThisTick.current.add(ball.id); // Mark as processed for this tick
+              }
+              return null; // Mark for removal
             }
             return { ...ball, y: newY };
-          }).filter(Boolean) as BallData[]
+          }).filter(Boolean) as BallData[] // Remove nulls (missed balls)
       );
       animationFrameId = requestAnimationFrame(gameLoop);
     };
@@ -226,32 +237,35 @@ const GameScreen: React.FC = () => {
     setClickedBallStreak(0);
     setBalls([]);
     setGameOver(false);
-    setGameStarted(true);
+    setGameStarted(true); // Make sure game starts
+    // Reload high score from localStorage in case it was updated in another tab or session
     const storedHighScore = localStorage.getItem(HIGH_SCORE_KEY);
     if (storedHighScore) {
       const numStoredHighScore = parseInt(storedHighScore, 10);
       console.log(`Restarting game. Loaded high score from localStorage: ${numStoredHighScore}`);
       if (numStoredHighScore !== highScore) {
-         setHighScore(numStoredHighScore);
+         setHighScore(numStoredHighScore); // Update if different
       }
     } else {
       console.log("Restarting game. No high score in localStorage, ensuring it's 0.");
-      setHighScore(0);
+      setHighScore(0); // If no stored high score, ensure it's 0
     }
   };
 
   const startGame = () => {
+    // Ensure high score is correctly loaded/reset at the very start
     const storedHighScore = localStorage.getItem(HIGH_SCORE_KEY);
     if (storedHighScore) {
       const numStoredHighScore = parseInt(storedHighScore, 10);
        console.log(`Starting game. Loaded high score from localStorage: ${numStoredHighScore}`);
-      if (numStoredHighScore !== highScore) {
+      if (numStoredHighScore !== highScore) { // Only set if different from current state
          setHighScore(numStoredHighScore);
       }
-    } else if (highScore !== 0) {
+    } else if (highScore !== 0) { // If no stored high score but state isn't 0, reset it
         console.log(`Starting game. No stored high score, resetting highScore state from ${highScore} to 0.`);
         setHighScore(0);
     }
+
     setGameStarted(true);
     initializeLives(INITIAL_LIVES);
     setScore(0);
@@ -294,16 +308,18 @@ const GameScreen: React.FC = () => {
 
       {isBonusAnimating && bonusBallTarget && (
         <div
-          className="fixed rounded-full bg-accent z-[100]"
+          className="fixed rounded-full bg-accent z-[100]" // Ensure it's above other elements
           style={{
             width: `${BALL_RADIUS * 2}px`,
             height: `${BALL_RADIUS * 2}px`,
-            left: '50vw',
-            top: '50vh',
+            left: '50vw', // Start from center
+            top: '50vh',  // Start from center
+            transform: 'translate(-50%, -50%)', // Adjust for centering
             animationName: 'big-ball-bonus-animation',
             animationDuration: '0.7s',
             animationTimingFunction: 'ease-out',
             animationFillMode: 'forwards',
+            // CSS variables for target position
             '--target-x': `${bonusBallTarget.x}px`,
             '--target-y': `${bonusBallTarget.y}px`,
           } as React.CSSProperties}
