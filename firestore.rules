@@ -1,0 +1,48 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection
+    match /users/{userId} {
+      // Anyone can read user profiles (e.g., for leaderboards, displaying usernames)
+      allow read: if true;
+
+      // Only the authenticated user can create their own profile
+      // Ensure basic required fields are present on creation
+      allow create: if request.auth != null && request.auth.uid == userId
+                    && request.resource.data.keys().hasAll(['uid', 'email', 'username', 'highScore', 'createdAt'])
+                    && request.resource.data.uid == userId
+                    && request.resource.data.highScore == 0;
+
+
+      // Only the authenticated user can update their own profile
+      allow update: if request.auth != null && request.auth.uid == userId
+                    // User can only update their own highScore, username, or photoURL. Email should not be changed this way.
+                    && (
+                         (
+                           request.resource.data.keys().hasOnly(['highScore'])
+                           && request.resource.data.highScore >= resource.data.highScore // Prevent lowering high score
+                         ) || (
+                           request.resource.data.keys().hasOnly(['username'])
+                           && request.resource.data.username is string
+                           && request.resource.data.username.size() > 0
+                         ) || (
+                            request.resource.data.keys().hasOnly(['photoURL'])
+                            && (request.resource.data.photoURL is string || request.resource.data.photoURL == null)
+                         ) || ( // Allow updating multiple fields, e.g. username and photoURL
+                           request.resource.data.keys().hasAll(['username', 'photoURL'])
+                           && request.resource.data.username is string
+                           && request.resource.data.username.size() > 0
+                           && (request.resource.data.photoURL is string || request.resource.data.photoURL == null)
+                         )
+                       )
+                    // Ensure essential fields are not deleted during an update
+                    && resource.data.keys().hasAll(['uid', 'email', 'createdAt']);
+
+
+      // Disallow delete for now, can be enabled with more specific conditions if needed
+      allow delete: if false;
+    }
+  }
+}
