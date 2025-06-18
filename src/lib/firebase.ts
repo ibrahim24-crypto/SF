@@ -3,14 +3,15 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 
-// IMPORTANT: Replace this with your actual Firebase project configuration!
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyCUyz8uLKvN4w2Dnx4ANFcrth8ubZNBnk0",
+  authDomain: "skyfall-5e47d.firebaseapp.com",
+  projectId: "skyfall-5e47d",
+  storageBucket: "skyfall-5e47d.appspot.com", // Corrected storageBucket from .firebasestorage.app to .appspot.com
+  messagingSenderId: "177609101052",
+  appId: "1:177609101052:web:c2844e9af4199606109179",
+  measurementId: "G-S3VFVZ65L0"
 };
 
 let app: FirebaseApp;
