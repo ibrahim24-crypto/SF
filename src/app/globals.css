@@ -103,16 +103,24 @@ body {
   animation: explode-line 0.3s forwards;
 }
 
+/* Updated animation to use CSS variables for target position */
 @keyframes big-ball-bonus-animation {
   0% {
-    transform: translate(-50%, -50%) scale(3); /* Start big in center */
+    transform: translate(-50%, -50%) scale(3); /* Start big from center of viewport */
     opacity: 0.5;
   }
+  50% {
+    opacity: 1;
+  }
   100% {
-    transform: translate(0, 0) scale(1); /* End at target position, normal size */
+    /* Target position needs to be relative to the initial fixed position (50vw, 50vh) */
+    /* This requires JS to calculate the difference or use a different animation approach if target is absolute screen coords */
+    /* For now, let's assume target-x, target-y are screen coords and this will animate towards them from center */
+    transform: translate(calc(var(--target-x) - 50vw), calc(var(--target-y) - 50vh)) scale(1);
     opacity: 1;
   }
 }
+
 
 @keyframes life-lost-animation {
   0% { transform: scale(1); opacity: 1; }
