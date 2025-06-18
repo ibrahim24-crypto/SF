@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -43,30 +44,6 @@ body {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
-  /* .dark class can be removed or repurposed for a light theme if explicitly needed later */
-  /*
-  .dark {
-    --background: 207 90% 94%;
-    --foreground: 210 10% 23%;
-    --card: 207 90% 94%;
-    --card-foreground: 210 10% 23%;
-    --popover: 207 90% 94%;
-    --popover-foreground: 210 10% 23%;
-    --primary: 217 89% 60%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 90%;
-    --secondary-foreground: 217 89% 60%;
-    --muted: 210 40% 95%;
-    --muted-foreground: 210 10% 45%;
-    --accent: 36 100% 50%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 210 40% 85%;
-    --input: 210 40% 85%;
-    --ring: 217 89% 60%;
-  }
-  */
 }
 
 @layer base {
@@ -95,27 +72,24 @@ body {
 
 .explosion-line {
   position: absolute;
-  height: 2px; /* Line thickness */
-  background-color: currentColor; /* Uses ball's text color or a specific explosion color */
+  height: 2px; 
+  background-color: currentColor; 
   top: 50%;
   left: 50%;
-  transform-origin: 0% 50%; /* Start of the line is the rotation point */
+  transform-origin: 0% 50%; 
   animation: explode-line 0.3s forwards;
 }
 
-/* Updated animation to use CSS variables for target position */
+
 @keyframes big-ball-bonus-animation {
   0% {
-    transform: translate(-50%, -50%) scale(3); /* Start big from center of viewport */
+    transform: translate(-50%, -50%) scale(3); 
     opacity: 0.5;
   }
   50% {
     opacity: 1;
   }
   100% {
-    /* Target position needs to be relative to the initial fixed position (50vw, 50vh) */
-    /* This requires JS to calculate the difference or use a different animation approach if target is absolute screen coords */
-    /* For now, let's assume target-x, target-y are screen coords and this will animate towards them from center */
     transform: translate(calc(var(--target-x) - 50vw), calc(var(--target-y) - 50vh)) scale(1);
     opacity: 1;
   }
@@ -123,11 +97,14 @@ body {
 
 
 @keyframes life-lost-animation {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.5) rotate(15deg); opacity: 0.7; }
-  100% { transform: scale(0.5) rotate(-15deg); opacity: 0; }
+  0% { transform: scale(1); opacity: 1; background-color: hsl(var(--destructive)); border-color: hsl(var(--destructive) / 0.7); }
+  50% { transform: scale(1.5) rotate(15deg); opacity: 0.7; background-color: hsl(var(--destructive) / 0.5); }
+  100% { transform: scale(0.5) rotate(-15deg); opacity: 0; background-color: transparent; border-color: transparent;}
 }
 
 .life-lost {
   animation: life-lost-animation 0.5s forwards;
+  /* Ensure background is transparent at the end to not show a static red ball post-animation */
+  background-color: transparent !important; 
+  border-color: transparent !important;
 }

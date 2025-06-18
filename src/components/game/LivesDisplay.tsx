@@ -1,22 +1,22 @@
+
 import React from 'react';
-import { Heart } from 'lucide-react'; // Using Heart as a placeholder for "big ball" icon
 
 interface LivesDisplayProps {
-  lives: number;
   livesState: Array<{ id: string, exploding: boolean }>;
 }
 
 const LivesDisplay: React.FC<LivesDisplayProps> = ({ livesState }) => {
   return (
-    <div className="absolute top-4 right-4 flex space-x-2 items-center bg-primary/80 p-3 rounded-lg shadow-md">
+    <div className="flex space-x-2 items-center bg-primary/80 p-3 rounded-lg shadow-md">
       <span className="text-2xl font-headline font-semibold text-primary-foreground mr-2">Lives:</span>
       {livesState.map((life) => (
         <div
           key={life.id}
-          className={`w-8 h-8 rounded-full bg-accent flex items-center justify-center shadow-inner ${life.exploding ? 'life-lost' : ''}`}
-          aria-label="Life"
+          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-inner 
+                      ${life.exploding ? 'life-lost' : 'bg-red-500 border-2 border-red-700'}`}
+          aria-label={life.exploding ? "Life lost" : "Life remaining"}
         >
-          {!life.exploding && <Heart size={20} className="text-accent-foreground" />}
+          {/* No icon needed if it's just a red ball, explosion handles visual change */}
         </div>
       ))}
     </div>
