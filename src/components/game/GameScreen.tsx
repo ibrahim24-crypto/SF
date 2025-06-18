@@ -7,11 +7,11 @@ import GameHeader from './GameHeader';
 import GameOverOverlay from './GameOverOverlay';
 import { Button } from '@/components/ui/button';
 
-const INITIAL_LIVES = 5; // Changed from 3 to 5
+const INITIAL_LIVES = 5;
 const BALL_RADIUS = 20;
 const BALL_FALL_SPEED = 2; 
 const BALL_GENERATION_INTERVAL = 1500; 
-const MISSED_BALLS_PER_LIFE_LOSS = 3; // Changed from 5 to 3
+const MISSED_BALLS_PER_LIFE_LOSS = 5; // Changed from 3 to 5
 const CLICKED_BALLS_PER_LIFE_GAIN = 50;
 const EXPLOSION_DURATION = 300; 
 const HIGH_SCORE_KEY = 'skyfallBoomerHighScore';
@@ -36,7 +36,6 @@ const GameScreen: React.FC = () => {
   const [bonusBallTarget, setBonusBallTarget] = useState<{x: number, y: number} | null>(null);
 
   const gameAreaRef = useRef<HTMLDivElement>(null);
-  const livesDisplayRef = useRef<HTMLDivElement>(null); // This ref might be repurposed or used by GameHeader if needed
 
   useEffect(() => {
     setIsClient(true);
@@ -48,7 +47,6 @@ const GameScreen: React.FC = () => {
       console.log("No high score found in localStorage. Initializing to 0.");
       setHighScore(0); 
     }
-    // Initialize lives here or in startGame, consistent with INITIAL_LIVES
     initializeLives(INITIAL_LIVES);
   }, []);
   
@@ -71,23 +69,19 @@ const GameScreen: React.FC = () => {
           if (prevLives.filter(l => !l.exploding).length >= INITIAL_LIVES * 2) return prevLives; 
 
           const newLifeId = `life-${prevLives.length}-${Date.now()}`;
-          // Target calculation for bonus life animation
-          // This might need adjustment if LivesDisplay's position changes due to GameHeader
           const livesElements = document.querySelectorAll('[aria-label="Life remaining"]');
           const lastLifeElement = livesElements[livesElements.length -1];
 
           if (lastLifeElement) {
-            const livesDisplayRect = lastLifeElement.parentElement?.parentElement?.getBoundingClientRect(); //Approximate new position
+            const livesDisplayRect = lastLifeElement.parentElement?.parentElement?.getBoundingClientRect();
             if (livesDisplayRect) {
-                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8; // Add to the right of current lives
+                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8; 
                 const targetY = livesDisplayRect.top + livesDisplayRect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
-                 setBonusBallTarget({ x: window.innerWidth - 100, y: 50 }); // Fallback
+                 setBonusBallTarget({ x: window.innerWidth - 100, y: 50 });
             }
           } else {
-            // Fallback if no lives elements are found (e.g., first life gain)
-            // Attempt to get the lives container
             const livesContainer = document.querySelector('.flex.space-x-2.items-center.bg-primary\\/80');
             if(livesContainer) {
                 const rect = livesContainer.getBoundingClientRect();
@@ -95,7 +89,7 @@ const GameScreen: React.FC = () => {
                 const targetY = rect.top + rect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
-                setBonusBallTarget({ x: window.innerWidth - 100, y: 50 }); // Absolute fallback
+                setBonusBallTarget({ x: window.innerWidth - 100, y: 50 }); 
             }
           }
 
@@ -110,15 +104,11 @@ const GameScreen: React.FC = () => {
       }
       return newStreak;
     });
-  }, [gameOver]);
+  }, [gameOver, livesState]); // Added livesState as it's used in the length check
 
   const handleBallMiss = useCallback((ballId: string) => {
     if (gameOver) return; 
     
-    // Ball is marked as exploding and removed after animation
-    // No direct removal from `balls` here, it's handled in gameLoop's logic when it goes off-screen
-    // setBalls(prev => prev.filter(b => b.id !== ballId)); // This immediate removal was problematic
-
     setMissedBallStreak((mbs) => {
       const newStreak = mbs + 1;
       if (newStreak > 0 && newStreak % MISSED_BALLS_PER_LIFE_LOSS === 0) {
@@ -128,12 +118,6 @@ const GameScreen: React.FC = () => {
             const updatedLives = [...prevLives];
             updatedLives[firstNonExplodingLifeIndex] = { ...updatedLives[firstNonExplodingLifeIndex], exploding: true };
             
-            // Life is visually "exploding", but not removed from state immediately.
-            // The explosion is purely visual. The actual count of lives is based on non-exploding ones.
-            // setTimeout(() => {
-            //   setLivesState(currentLives => currentLives.filter(l => l.id !== updatedLives[firstNonExplodingLifeIndex].id || !l.exploding));
-            // }, LIFE_EXPLOSION_ANIMATION_DURATION); // Example: if you want to remove it from array after anim
-
             const remainingLives = updatedLives.filter(l => !l.exploding).length;
             if (remainingLives === 0) {
               console.log(`Game Over. Score: ${score}, Current High Score: ${highScore}`);
@@ -150,7 +134,7 @@ const GameScreen: React.FC = () => {
           }
           return prevLives; 
         });
-        return 0; // Reset streak after losing a life
+        return 0; 
       }
       return newStreak;
     });
@@ -206,14 +190,12 @@ const GameScreen: React.FC = () => {
           .map((ball) => {
             if (ball.isExploding) return ball; 
             const newY = ball.y + BALL_FALL_SPEED;
-            if (newY > gameAreaHeight + ball.radius) { // Ball fully off screen
+            if (newY > gameAreaHeight + ball.radius) { 
               handleBallMiss(ball.id); 
-              // Mark as exploding to trigger visual effect if desired, then filter out
-              // Or just filter out if no off-screen explosion visual is needed
-              return null; // Will be filtered out by .filter(Boolean)
+              return null; 
             }
             return { ...ball, y: newY };
-          }).filter(Boolean) as BallData[] // Ensure type after filter
+          }).filter(Boolean) as BallData[] 
       );
       animationFrameId = requestAnimationFrame(gameLoop);
     };

@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import ScoreDisplay from './ScoreDisplay';
 import LivesDisplay from './LivesDisplay';
-import type { BallProps as BallData } from './Ball'; // Assuming BallData might be needed for future prop consistency
+import { Button } from '@/components/ui/button';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 
 interface LifeState {
   id: string;
@@ -16,10 +17,32 @@ interface GameHeaderProps {
 }
 
 const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   return (
-    <header className="absolute top-0 left-0 right-0 z-10 flex items-start justify-between p-4">
-      <ScoreDisplay score={score} highScore={highScore} />
-      <LivesDisplay livesState={livesState} />
+    <header className="absolute top-0 left-0 right-0 z-10 p-4">
+      <div className="flex items-center justify-end w-full mb-1"> {/* Reduced mb for tighter spacing */}
+        <Button
+          onClick={toggleCollapse}
+          variant="ghost"
+          size="icon"
+          className="text-primary-foreground hover:bg-primary/70 active:bg-primary/60 p-1 rounded-md"
+          aria-label={isCollapsed ? "Show game details" : "Hide game details"}
+          aria-expanded={!isCollapsed}
+        >
+          {isCollapsed ? <ChevronDown className="h-6 w-6" /> : <ChevronUp className="h-6 w-6" />}
+        </Button>
+      </div>
+      {!isCollapsed && (
+        <div className="flex items-start justify-between w-full transition-all duration-300 ease-in-out">
+          <ScoreDisplay score={score} highScore={highScore} />
+          <LivesDisplay livesState={livesState} />
+        </div>
+      )}
     </header>
   );
 };
