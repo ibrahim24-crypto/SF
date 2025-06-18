@@ -263,7 +263,7 @@ const GameScreen: React.FC = () => {
     setMissedBallStreak(0);
     setClickedBallStreak(0);
     setScoreAreaClickCount(0);
-    setBallPulseAnimationTrigger(0); // Reset pulse trigger
+    setBallPulseAnimationTrigger(0);
     setBalls([]);
     setGameOver(false);
     explodingInProgressRef.current.clear();
@@ -298,15 +298,17 @@ const GameScreen: React.FC = () => {
   const handleScoreAreaClick = useCallback(() => {
     if (!gameStarted || gameOver || isInstantExplodeModeActive) return;
 
-    setBallPulseAnimationTrigger(prev => prev + 1); // Trigger animation on every click
+    setBallPulseAnimationTrigger(prev => prev + 1);
 
     setScoreAreaClickCount(prevCount => {
       const newCount = prevCount + 1;
       if (newCount >= SECRET_CLICK_TARGET) {
         setIsInstantExplodeModeActive(true);
         setShowInstantExplodeBanner(true);
-        toast({ title: "🤫 Secret Activated!", description: "Instant Explode Mode is ON!", duration: 5000 });
-        return 0; // Reset count after activation
+        setTimeout(() => {
+          toast({ title: "🤫 Secret Activated!", description: "Instant Explode Mode is ON!", duration: 5000 });
+        }, 0);
+        return 0; 
       }
       return newCount;
     });
@@ -395,3 +397,4 @@ const GameScreen: React.FC = () => {
 };
 
 export default GameScreen;
+
