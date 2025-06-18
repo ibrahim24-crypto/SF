@@ -24,38 +24,37 @@ interface LifeState {
 
 interface GameHeaderProps {
   score: number;
-  highScore: number; // This will now be the local/overall high score
+  highScore: number; 
   livesState: LifeState[];
 }
 
 const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, loading, logOut } = useAuth();
+  const { user, loading } = useAuth(); // Removed logOut as it's in dropdown
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
-  // Determine the high score to display: user's Firebase high score if logged in, otherwise local high score
   const displayHighScore = user?.highScore !== undefined ? Math.max(highScore, user.highScore) : highScore;
 
   return (
-    <header className="absolute top-0 left-0 right-0 z-10 p-4">
-      <div className="flex items-center justify-between w-full mb-1">
-        <div className="flex items-center space-x-2">
+    <header className="absolute top-0 left-0 right-0 z-10 p-2 sm:p-4">
+      <div className="flex items-center justify-between w-full mb-0.5 sm:mb-1">
+        <div className="flex items-center space-x-1 sm:space-x-2">
           {loading ? (
             <div className="h-8 w-24 bg-muted rounded-md animate-pulse"></div>
           ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-1 h-auto text-primary-foreground hover:bg-primary/70">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1 sm:space-x-2">
                     {user.photoURL ? (
-                      <Image src={user.photoURL} alt={user.username || "User"} width={28} height={28} className="rounded-full" />
+                      <Image src={user.photoURL} alt={user.username || "User"} width={28} height={28} className="rounded-full w-6 h-6 sm:w-7 sm:h-7" />
                     ) : (
-                      <UserIcon className="h-7 w-7 p-0.5 rounded-full bg-primary/50" />
+                      <UserIcon className="h-6 w-6 sm:h-7 sm:w-7 p-0.5 rounded-full bg-primary/50" />
                     )}
-                    <span className="font-medium hidden sm:inline">{user.username || 'Profile'}</span>
+                    <span className="font-medium text-sm sm:text-base hidden sm:inline">{user.username || 'Profile'}</span>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
@@ -65,15 +64,15 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState })
                 <Link href="/profile" passHref><DropdownMenuItem>View Profile</DropdownMenuItem></Link>
                 <Link href="/leaderboard" passHref><DropdownMenuItem>Leaderboard</DropdownMenuItem></Link>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logOut} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                <DropdownMenuItem onClick={async () => { await useAuth().logOut();}} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                   Log Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <Link href="/login" passHref>
-              <Button variant="ghost" className="text-primary-foreground hover:bg-primary/70">
-                <LogIn className="mr-2 h-5 w-5" /> Login
+              <Button variant="ghost" className="text-primary-foreground hover:bg-primary/70 text-sm sm:text-base px-2 sm:px-3">
+                <LogIn className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Login
               </Button>
             </Link>
           )}
@@ -83,17 +82,17 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState })
           onClick={toggleCollapse}
           variant="ghost"
           size="icon"
-          className="text-primary-foreground hover:bg-primary/70 active:bg-primary/60 p-1 rounded-md"
+          className="text-primary-foreground hover:bg-primary/70 active:bg-primary/60 p-1 rounded-md h-7 w-7 sm:h-8 sm:w-8"
           aria-label={isCollapsed ? "Show game details" : "Hide game details"}
           aria-expanded={!isCollapsed}
         >
-          {isCollapsed ? <ChevronDown className="h-6 w-6" /> : <ChevronUp className="h-6 w-6" />}
+          {isCollapsed ? <ChevronDown className="h-5 w-5 sm:h-6 sm:w-6" /> : <ChevronUp className="h-5 w-5 sm:h-6 sm:w-6" />}
         </Button>
       </div>
       <div
         className={cn(
           "flex items-start justify-between w-full overflow-hidden transition-all duration-300 ease-in-out",
-          isCollapsed ? "max-h-0 opacity-0" : "max-h-48 opacity-100 mt-1" 
+          isCollapsed ? "max-h-0 opacity-0" : "max-h-48 opacity-100 mt-0.5 sm:mt-1" 
         )}
         aria-hidden={isCollapsed}
       >
