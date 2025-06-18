@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -50,6 +50,12 @@ export default function LoginPage() {
     resolver: zodResolver(signupSchema),
   });
 
+  useEffect(() => {
+    if (user) {
+      router.push('/profile'); // Or '/' to go to the game
+    }
+  }, [user, router]);
+
   const onLoginSubmit: SubmitHandler<LoginFormData> = async (data) => {
     await logInWithEmail(data.email, data.password);
   };
@@ -70,8 +76,8 @@ export default function LoginPage() {
     );
   }
 
+  // If user exists and we are about to navigate, render nothing to avoid flicker
   if (user) {
-    router.push('/profile'); // Or '/' to go to the game
     return null;
   }
   
