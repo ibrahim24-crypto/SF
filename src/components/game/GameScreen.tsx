@@ -14,6 +14,7 @@ const BALL_GENERATION_INTERVAL = 1500; // Milliseconds
 const MISSED_BALLS_PER_LIFE_LOSS = 5;
 const CLICKED_BALLS_PER_LIFE_GAIN = 50;
 const EXPLOSION_DURATION = 300; // Milliseconds, should match CSS animation
+const HIGH_SCORE_KEY = 'skyfallBoomerHighScore';
 
 interface LifeState {
   id: string;
@@ -23,6 +24,7 @@ interface LifeState {
 const GameScreen: React.FC = () => {
   const [isClient, setIsClient] = useState(false);
   const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
   
   const [livesState, setLivesState] = useState<LifeState[]>([]);
   const [missedBallStreak, setMissedBallStreak] = useState(0);
@@ -34,11 +36,15 @@ const GameScreen: React.FC = () => {
   const [bonusBallTarget, setBonusBallTarget] = useState<{x: number, y: number} | null>(null);
 
   const gameAreaRef = useRef<HTMLDivElement>(null);
-  const livesDisplayRef = useRef<HTMLDivElement>(null); // For bonus ball animation target
+  const livesDisplayRef = useRef<HTMLDivElement>(null); 
 
   useEffect(() => {
     setIsClient(true);
     initializeLives(INITIAL_LIVES);
+    const storedHighScore = localStorage.getItem(HIGH_SCORE_KEY);
+    if (storedHighScore) {
+      setHighScore(parseInt(storedHighScore, 10));
+    }
   }, []);
   
   const initializeLives = (numLives: number) => {
@@ -49,7 +55,7 @@ const GameScreen: React.FC = () => {
     if (currentScore > 500) return 'rainbow-gradient';
     const TIER_SCORE = 30;
     const tier = Math.floor(currentScore / TIER_SCORE);
-    const colors = ['#FFFFFF', '#FFFF00', '#90EE90', '#ADD8E6', '#FFC0CB', '#E6E6FA', '#FFA500']; // White, Yellow, LightGreen, LightBlue, Pink, Lavender, Orange
+    const colors = ['#FFFFFF', '#FFFF00', '#90EE90', '#ADD8E6', '#FFC0CB', '#E6E6FA', '#FFA500']; 
     return colors[tier % colors.length] || '#FFFFFF';
   }, []);
 
@@ -58,8 +64,8 @@ const GameScreen: React.FC = () => {
     const gameAreaWidth = gameAreaRef.current.offsetWidth;
     const newBall: BallData = {
       id: `ball-${Date.now()}-${Math.random()}`,
-      x: Math.random() * (100 - (BALL_RADIUS * 2 * 100 / gameAreaWidth)) + (BALL_RADIUS * 100 / gameAreaWidth), // percentage
-      y: -BALL_RADIUS, // Start off-screen
+      x: Math.random() * (100 - (BALL_RADIUS * 2 * 100 / gameAreaWidth)) + (BALL_RADIUS * 100 / gameAreaWidth), 
+      y: -BALL_RADIUS, 
       radius: BALL_RADIUS,
       color: getBallColor(score),
       onBallClick: handleBallClick,
@@ -84,11 +90,11 @@ const GameScreen: React.FC = () => {
       setBalls((prevBalls) =>
         prevBalls
           .map((ball) => {
-            if (ball.isExploding) return ball; // Keep exploding balls until timeout removes them
+            if (ball.isExploding) return ball; 
             const newY = ball.y + BALL_FALL_SPEED;
             if (newY > gameAreaHeight + ball.radius) {
               handleBallMiss(ball.id);
-              return { ...ball, isExploding: true, y: gameAreaHeight - ball.radius }; // Set to explode at bottom
+              return { ...ball, isExploding: true, y: gameAreaHeight - ball.radius }; 
             }
             return { ...ball, y: newY };
           })
@@ -111,23 +117,20 @@ const GameScreen: React.FC = () => {
     setClickedBallStreak((cbs) => {
       const newStreak = cbs + 1;
       if (newStreak % CLICKED_BALLS_PER_LIFE_GAIN === 0) {
-        
         setLivesState(prevLives => {
           const newLifeId = `life-${prevLives.length}-${Date.now()}`;
           if (livesDisplayRef.current) {
             const rect = livesDisplayRef.current.getBoundingClientRect();
-            // Approximate target for the new life icon within the LivesDisplay
-            const targetX = rect.left + (prevLives.length * (BALL_RADIUS*1.2 + 8)) + BALL_RADIUS *0.6; // 8 is space-x-2
+            const targetX = rect.left + (prevLives.length * (BALL_RADIUS*1.2 + 8)) + BALL_RADIUS *0.6; 
             const targetY = rect.top + BALL_RADIUS *0.6;
             setBonusBallTarget({ x: targetX, y: targetY });
           }
           setIsBonusAnimating(true);
-          // Actual addition of life happens after animation
           setTimeout(() => {
             setLivesState(prev => [...prev, { id: newLifeId, exploding: false }]);
             setIsBonusAnimating(false);
-          }, 700); // Match animation duration in CSS
-          return prevLives; // Return previous state, new life added after anim
+          }, 700); 
+          return prevLives; 
         });
       }
       return newStreak;
@@ -135,9 +138,8 @@ const GameScreen: React.FC = () => {
   }, [gameOver]);
 
   const handleBallMiss = useCallback((ballId: string) => {
-    if (gameOver) return; // Should already be exploding, but double check
+    if (gameOver) return; 
     
-    // Ball is marked exploding by gameLoop, this handles consequences
     setTimeout(() => setBalls(prev => prev.filter(b => b.id !== ballId)), EXPLOSION_DURATION);
 
     setMissedBallStreak((mbs) => {
@@ -149,19 +151,22 @@ const GameScreen: React.FC = () => {
             const updatedLives = [...prevLives];
             updatedLives[firstNonExplodingLifeIndex] = { ...updatedLives[firstNonExplodingLifeIndex], exploding: true };
             
-            // Check for game over condition
             const remainingLives = updatedLives.filter(l => !l.exploding).length;
             if (remainingLives === 0) {
+              if (score > highScore) {
+                setHighScore(score);
+                localStorage.setItem(HIGH_SCORE_KEY, score.toString());
+              }
               setGameOver(true);
             }
             return updatedLives;
           }
-          return prevLives; // No non-exploding life found, should not happen if game over logic is correct
+          return prevLives; 
         });
       }
       return newStreak;
     });
-  }, [gameOver]);
+  }, [gameOver, score, highScore]);
 
 
   const restartGame = () => {
@@ -172,11 +177,12 @@ const GameScreen: React.FC = () => {
     setBalls([]);
     setGameOver(false);
     setGameStarted(true);
+    // High score is not reset, it persists
   };
 
   const startGame = () => {
     setGameStarted(true);
-    restartGame();
+    restartGame(); // Also initializes lives and score
   };
   
   if (!isClient) {
@@ -186,7 +192,8 @@ const GameScreen: React.FC = () => {
   if (!gameStarted) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background">
-        <h1 className="text-5xl font-headline text-primary mb-8">Skyfall Boomer</h1>
+        <h1 className="text-5xl font-headline text-primary mb-4">Skyfall Boomer</h1>
+        <p className="text-xl text-foreground/80 mb-8">High Score: {highScore}</p>
         <Button onClick={startGame} size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-2xl py-4 px-8">
           Start Game
         </Button>
@@ -196,7 +203,7 @@ const GameScreen: React.FC = () => {
 
   return (
     <div ref={gameAreaRef} className="relative w-screen h-screen overflow-hidden bg-background select-none" aria-label="Game Area">
-      <ScoreDisplay score={score} />
+      <ScoreDisplay score={score} highScore={highScore} />
       <div ref={livesDisplayRef}>
         <LivesDisplay livesState={livesState} />
       </div>
@@ -211,18 +218,15 @@ const GameScreen: React.FC = () => {
           style={{
             width: `${BALL_RADIUS * 2}px`,
             height: `${BALL_RADIUS * 2}px`,
-            left: '50vw', // Start from center
-            top: '50vh', // Start from center
-            '--target-x': `${bonusBallTarget.x}px`, // Custom props for animation if needed by CSS, or animate directly with JS
+            left: '50vw', 
+            top: '50vh', 
+            '--target-x': `${bonusBallTarget.x}px`, 
             '--target-y': `${bonusBallTarget.y}px`,
-             // The animation 'big-ball-bonus-animation' in globals.css will handle movement if CSS vars are not easily usable.
-             // For simplicity, the CSS animation is generic and this div is just styled.
-             // A more robust solution would involve JS animation for precise targeting.
           }}
         />
       )}
 
-      {gameOver && <GameOverOverlay score={score} onRestart={restartGame} />}
+      {gameOver && <GameOverOverlay score={score} highScore={highScore} onRestart={restartGame} />}
     </div>
   );
 };
