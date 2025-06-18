@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ['Poppins', 'sans-serif'],
+        headline: ['Poppins', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -88,10 +88,37 @@ export default {
             height: '0',
           },
         },
+        'spin': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+        'explode-line': {
+          '0%': { width: '0', opacity: '1', transform: 'rotate(var(--angle)) translateX(0)' },
+          '100%': { width: 'var(--line-length, 50px)', opacity: '0', transform: 'rotate(var(--angle)) translateX(calc(var(--line-length, 50px) / 2))' },
+        },
+        'big-ball-bonus-animation': {
+          '0%': {
+            transform: 'translate(-50%, -50%) scale(3)',
+            opacity: '0.5',
+          },
+          '100%': {
+            transform: 'translate(0, 0) scale(1)',
+            opacity: '1',
+          },
+        },
+        'life-lost-animation': {
+          '0%': { transform: 'scale(1)', opacity: '1' },
+          '50%': { transform: 'scale(1.5) rotate(15deg)', opacity: '0.7' },
+          '100%': { transform: 'scale(0.5) rotate(-15deg)', opacity: '0' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'spin': 'spin 4s linear infinite',
+        'explode-line': 'explode-line 0.3s forwards',
+        'big-ball-bonus': 'big-ball-bonus-animation 0.7s ease-out forwards',
+        'life-lost': 'life-lost-animation 0.5s forwards',
       },
     },
   },
