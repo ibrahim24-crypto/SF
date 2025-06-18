@@ -24,13 +24,14 @@ interface LifeState {
 
 interface GameHeaderProps {
   score: number;
-  highScore: number; 
+  highScore: number;
   livesState: LifeState[];
+  onScoreAreaClick?: () => void;
 }
 
-const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState }) => {
+const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState, onScoreAreaClick }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, loading } = useAuth(); // Removed logOut as it's in dropdown
+  const { user, loading, logOut } = useAuth();
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -64,7 +65,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState })
                 <Link href="/profile" passHref><DropdownMenuItem>View Profile</DropdownMenuItem></Link>
                 <Link href="/leaderboard" passHref><DropdownMenuItem>Leaderboard</DropdownMenuItem></Link>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={async () => { await useAuth().logOut();}} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                <DropdownMenuItem onClick={logOut} className="text-destructive focus:text-destructive focus:bg-destructive/10">
                   Log Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -92,11 +93,11 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState })
       <div
         className={cn(
           "flex items-start justify-between w-full overflow-hidden transition-all duration-300 ease-in-out",
-          isCollapsed ? "max-h-0 opacity-0" : "max-h-48 opacity-100 mt-0.5 sm:mt-1" 
+          isCollapsed ? "max-h-0 opacity-0" : "max-h-48 opacity-100 mt-0.5 sm:mt-1"
         )}
         aria-hidden={isCollapsed}
       >
-        <ScoreDisplay score={score} highScore={displayHighScore} />
+        <ScoreDisplay score={score} highScore={displayHighScore} onScoreAreaClick={onScoreAreaClick} />
         <LivesDisplay livesState={livesState} />
       </div>
     </header>
