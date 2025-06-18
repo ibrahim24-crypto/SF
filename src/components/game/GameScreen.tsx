@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import BallComponent, { type BallProps as BallData } from './Ball';
+import BallComponent, { type BallProps as BallDataImported } from './Ball';
 import GameHeader from './GameHeader';
 import GameOverOverlay from './GameOverOverlay';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,19 @@ interface LifeState {
   id: string;
   exploding: boolean;
 }
+
+// Local BallData type, matching BallProps['onBallClick'] for consistency
+interface BallData {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+  color: string;
+  onBallClick: (id: string, eventType?: 'click' | 'hover' | 'touch') => void;
+  isExploding: boolean;
+  // isInstantExplodeModeActive is passed separately to BallComponent, not stored per ball in state
+}
+
 
 const GameScreen: React.FC = () => {
   const { user, updateUserHighScore } = useAuth();
@@ -77,10 +90,9 @@ const GameScreen: React.FC = () => {
     setLivesState(Array.from({ length: numLives }, (_, i) => ({ id: `life-${i}-${Date.now()}`, exploding: false })));
   };
 
-  const handleBallClick = useCallback((ballId: string) => {
+  const handleBallClick = useCallback((ballId: string, eventType?: 'click' | 'hover' | 'touch') => {
     if (gameOver) return;
     
-    // Ensure the ball exists and isn't already exploding to prevent multiple processing
     const ballExistsAndNotExploding = balls.find(b => b.id === ballId && !b.isExploding);
     if (!ballExistsAndNotExploding) return;
 
@@ -103,14 +115,14 @@ const GameScreen: React.FC = () => {
           if (lastLifeElement) {
             const livesDisplayRect = lastLifeElement.parentElement?.parentElement?.getBoundingClientRect();
             if (livesDisplayRect) {
-                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8; // Adjusted target X
+                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8; 
                 const targetY = livesDisplayRect.top + livesDisplayRect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
                  setBonusBallTarget({ x: window.innerWidth - 100, y: 50 });
             }
           } else {
-            const livesContainer = document.querySelector('.flex.space-x-1.items-center.bg-primary\\/80, .flex.space-x-2.items-center.bg-primary\\/80'); // Adjusted selector
+            const livesContainer = document.querySelector('.flex.space-x-1.items-center.bg-primary\\/80, .flex.space-x-2.items-center.bg-primary\\/80'); 
             if(livesContainer) {
                 const rect = livesContainer.getBoundingClientRect();
                 const targetX = rect.left + BALL_RADIUS * 0.6;
@@ -133,14 +145,15 @@ const GameScreen: React.FC = () => {
       }
       return newStreak;
     });
-  }, [gameOver, balls, setBalls, setScore, setClickedBallStreak, setLivesState, setIsBonusAnimating, setBonusBallTarget]);
+  }, [gameOver, balls, setBalls, setScore, setClickedBallStreak, CLICKED_BALLS_PER_LIFE_GAIN, setLivesState, INITIAL_LIVES, setIsBonusAnimating, setBonusBallTarget, toast, user, updateUserHighScore]);
 
 
   const handleBallMiss = useCallback((ballId: string) => {
     if (gameOver) return;
-
+    
     setMissedBallStreak((currentStreakMbs) => {
       const newCalculatedStreak = currentStreakMbs + 1;
+      
       const conditionMet = (newCalculatedStreak > 0 && newCalculatedStreak % MISSED_BALLS_PER_LIFE_LOSS === 0);
 
       if (conditionMet) {
@@ -196,12 +209,12 @@ const GameScreen: React.FC = () => {
       y: -BALL_RADIUS,
       radius: BALL_RADIUS,
       color: getBallColor(score),
-      onBallClick: handleBallClick,
+      onBallClick: handleBallClick, // Type signature now matches
       isExploding: false,
-      isInstantExplodeModeActive: isInstantExplodeModeActive, // Pass mode to ball
+      // isInstantExplodeModeActive is passed to BallComponent directly, not stored in BallData
     };
     setBalls((prevBalls) => [...prevBalls, newBall]);
-  }, [score, getBallColor, isClient, handleBallClick, gameOver, isInstantExplodeModeActive, setBalls]);
+  }, [score, getBallColor, isClient, handleBallClick, gameOver, setBalls]);
 
 
   useEffect(() => {
@@ -265,11 +278,11 @@ const GameScreen: React.FC = () => {
     }
     setLocalHighScore(newLocalHighScore);
     
-    // Activate instant explode mode with 10% chance
     const instantMode = Math.random() < 0.1;
     setIsInstantExplodeModeActive(instantMode);
     if (instantMode) {
       setShowInstantExplodeBanner(true);
+      toast({ title: "⚡ Instant Explode Mode Active! ⚡", description: "Hover or tap balls to pop them instantly!", duration: 5000 });
     } else {
       setShowInstantExplodeBanner(false);
     }
@@ -291,7 +304,6 @@ const GameScreen: React.FC = () => {
     setBalls([]);
     setGameOver(false);
 
-    // Activate instant explode mode with 10% chance
     const instantMode = Math.random() < 0.1;
     setIsInstantExplodeModeActive(instantMode);
     if (instantMode) {
@@ -373,3 +385,4 @@ const GameScreen: React.FC = () => {
 };
 
 export default GameScreen;
+

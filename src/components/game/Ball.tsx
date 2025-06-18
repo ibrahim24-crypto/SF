@@ -9,7 +9,7 @@ export interface BallProps {
   color: string;
   onBallClick: (id: string, eventType?: 'click' | 'hover' | 'touch') => void;
   isExploding: boolean;
-  isInstantExplodeModeActive?: boolean; // Optional: for enhanced interaction
+  isInstantExplodeModeActive?: boolean;
 }
 
 const BallComponent: React.FC<BallProps> = ({ 
@@ -36,7 +36,6 @@ const BallComponent: React.FC<BallProps> = ({
 
   const handleTouchStart = (event: React.TouchEvent) => {
     if (isInstantExplodeModeActive) {
-      // event.preventDefault(); // May not be needed if click is handled well
       sharedAction('touch');
     }
   };
@@ -97,4 +96,4 @@ const BallComponent: React.FC<BallProps> = ({
   );
 };
 
-export default BallComponent;
+export default React.memo(BallComponent);
