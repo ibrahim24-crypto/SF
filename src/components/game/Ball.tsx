@@ -1,3 +1,4 @@
+
 import React from 'react';
 import ExplosionEffect from './ExplosionEffect';
 
@@ -7,42 +8,43 @@ export interface BallProps {
   y: number;
   radius: number;
   color: string;
-  onBallClick: (id: string, eventType?: 'click' | 'hover' | 'touch') => void;
+  onBallClick: (id: string) => void; // Simplified: no eventType
   isExploding: boolean;
   isInstantExplodeModeActive?: boolean;
 }
 
-const BallComponent: React.FC<BallProps> = ({ 
-  id, 
-  x, 
-  y, 
-  radius, 
-  color, 
-  onBallClick, 
+const BallComponent: React.FC<BallProps> = ({
+  id,
+  x,
+  y,
+  radius,
+  color,
+  onBallClick,
   isExploding,
-  isInstantExplodeModeActive 
+  isInstantExplodeModeActive
 }) => {
-  const sharedAction = (eventType: 'click' | 'hover' | 'touch') => {
-    if (!isExploding) {
-      onBallClick(id, eventType);
+  const sharedAction = () => {
+    if (!isExploding) { // Check local isExploding prop
+      onBallClick(id);
     }
   };
 
   const handleMouseEnter = () => {
     if (isInstantExplodeModeActive) {
-      sharedAction('hover');
+      sharedAction();
     }
   };
 
   const handleTouchStart = (event: React.TouchEvent) => {
+    // Consider event.preventDefault() if it causes issues with subsequent clicks
     if (isInstantExplodeModeActive) {
-      sharedAction('touch');
+      sharedAction();
     }
   };
-  
+
   const handleClick = (event: React.MouseEvent) => {
     event.stopPropagation();
-    sharedAction('click');
+    sharedAction(); // Always call sharedAction on click
   };
 
   const ballStyle: React.CSSProperties = {
@@ -55,7 +57,7 @@ const BallComponent: React.FC<BallProps> = ({
     transform: 'translate(-50%, -50%)',
     cursor: isInstantExplodeModeActive ? 'crosshair' : 'pointer',
     boxShadow: '0px 2px 5px rgba(0,0,0,0.2)',
-    transition: 'top 0.05s linear', 
+    transition: 'top 0.05s linear',
   };
 
   if (color === 'rainbow-gradient') {
@@ -64,16 +66,16 @@ const BallComponent: React.FC<BallProps> = ({
     ballStyle.backgroundColor = color;
   }
 
-  if (isExploding) {
+  if (isExploding) { // This is the prop passed from GameScreen
     return (
-      <div style={{ 
-          left: `${x}%`, 
-          top: `${y}px`, 
-          width: `${radius * 2}px`, 
-          height: `${radius * 2}px`, 
-          position: 'absolute', 
+      <div style={{
+          left: `${x}%`,
+          top: `${y}px`,
+          width: `${radius * 2}px`,
+          height: `${radius * 2}px`,
+          position: 'absolute',
           transform: 'translate(-50%, -50%)',
-          pointerEvents: 'none' 
+          pointerEvents: 'none'
         }}
       >
         <ExplosionEffect color={color} size={radius * 2}/>
