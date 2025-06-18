@@ -86,7 +86,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: "Signed in with Google successfully!" });
     } catch (error: any) {
       console.error("Google Sign-In Error:", error);
-      toast({ title: "Google Sign-In Failed", description: error.message, variant: "destructive" });
+      if (error.code === 'auth/user-cancelled' || error.code === 'auth/popup-closed-by-user') {
+        toast({ title: "Google Sign-In Cancelled", description: "The sign-in process was not completed.", variant: "default" });
+      } else {
+        toast({ title: "Google Sign-In Failed", description: error.message, variant: "destructive" });
+      }
     } finally {
       setLoading(false);
     }
@@ -102,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         uid: userCredential.user.uid,
         email: userCredential.user.email,
         username: username,
-        photoURL: userCredential.user.photoURL,
+        photoURL: userCredential.user.photoURL, // Will be null initially for email sign up
         highScore: 0,
       };
       await setDoc(doc(db, "users", userCredential.user.uid), { ...newUserProfile, createdAt: serverTimestamp() });
@@ -122,7 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signInWithEmailAndPassword(auth, email, password);
       // onAuthStateChanged will handle setting the user
       toast({ title: "Logged in successfully!" });
-    } catch (error: any) {
+    } catch (error: any)      {
       console.error("Email Login Error:", error);
       toast({ title: "Login Failed", description: error.message, variant: "destructive" });
     } finally {
@@ -148,8 +152,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
       try {
-        await updateDoc(userDocRef, { highScore: score });
-        setUser(prevUser => prevUser ? { ...prevUser, highScore: score } : null);
+        // Check if the new score is actually higher before updating
+        if (score > (user.highScore || 0)) {
+          await updateDoc(userDocRef, { highScore: score });
+          setUser(prevUser => prevUser ? { ...prevUser, highScore: score } : null);
+        }
       } catch (error) {
         console.error("Error updating high score in Firebase:", error);
         toast({ title: "Error Syncing Score", description: "Could not update high score in Firebase.", variant: "destructive" });
