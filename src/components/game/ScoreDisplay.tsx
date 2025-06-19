@@ -12,6 +12,7 @@ const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ score, highScore, onScoreAr
     <div
       className="bg-primary/80 text-primary-foreground p-2 sm:p-3 rounded-lg shadow-md flex flex-col space-y-0.5 sm:space-y-1 items-start select-none"
       onClick={onScoreAreaClick}
+      style={{ cursor: onScoreAreaClick ? 'default' : 'auto' }} // Default cursor unless no click handler
       aria-label="Score and high score display"
     >
       <h2 className="text-lg sm:text-2xl font-headline font-semibold">Score: {score}</h2>
