@@ -39,25 +39,25 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState, o
 
   const displayHighScore = user?.highScore !== undefined ? Math.max(highScore, user.highScore) : highScore;
 
-  // Use primary-foreground (white) for text on primary background (vivid blue)
-  const textColorClass = "text-primary-foreground";
-  const hoverBgClass = "hover:bg-primary/70"; // Slightly darker vivid blue on hover
+  const headerBackgroundColor = "bg-background/30 backdrop-blur-sm"; // Dark, slightly transparent
+  const textColorClass = "text-foreground"; // Light text for dark background
+  const hoverBgClass = "hover:bg-secondary/50"; // Hover for buttons
 
   return (
     <header className="absolute top-0 left-0 right-0 z-10 p-2 sm:p-4">
       <div className="flex items-center justify-between w-full mb-0.5 sm:mb-1">
         <div className="flex items-center space-x-1 sm:space-x-2">
           {loading ? (
-            <div className="h-8 w-24 bg-muted rounded-md animate-pulse"></div>
+            <div className="h-8 w-24 bg-muted/50 rounded-md animate-pulse"></div>
           ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className={cn("p-1 h-auto", textColorClass, hoverBgClass)}>
                   <div className="flex items-center space-x-1 sm:space-x-2">
                     {user.photoURL ? (
-                      <Image src={user.photoURL} alt={user.username || "User"} width={28} height={28} className="rounded-full w-6 h-6 sm:w-7 sm:h-7 border border-primary-foreground/50" />
+                      <Image src={user.photoURL} alt={user.username || "User"} width={28} height={28} className="rounded-full w-6 h-6 sm:w-7 sm:h-7 border border-foreground/30" />
                     ) : (
-                      <UserIcon className={cn("h-6 w-6 sm:h-7 sm:w-7 p-0.5 rounded-full bg-primary/30", textColorClass)} />
+                      <UserIcon className={cn("h-6 w-6 sm:h-7 sm:h-7 p-0.5 rounded-full bg-secondary/30", textColorClass)} />
                     )}
                     <span className={cn("font-medium text-sm sm:text-base hidden sm:inline", textColorClass)}>{user.username || 'Profile'}</span>
                   </div>
@@ -69,7 +69,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState, o
                 <Link href="/profile" passHref><DropdownMenuItem>View Profile</DropdownMenuItem></Link>
                 <Link href="/leaderboard" passHref><DropdownMenuItem>Leaderboard</DropdownMenuItem></Link>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logOut} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                <DropdownMenuItem onClick={logOut} className="text-destructive focus:text-destructive focus:bg-destructive/20">
                   Log Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -87,7 +87,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState, o
           onClick={toggleCollapse}
           variant="ghost"
           size="icon"
-          className={cn("p-1 rounded-md h-7 w-7 sm:h-8 sm:w-8", textColorClass, hoverBgClass, "active:bg-primary/60")}
+          className={cn("p-1 rounded-md h-7 w-7 sm:h-8 sm:w-8", textColorClass, hoverBgClass, "active:bg-secondary/40")}
           aria-label={isCollapsed ? "Show game details" : "Hide game details"}
           aria-expanded={!isCollapsed}
         >
@@ -96,7 +96,8 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState, o
       </div>
       <div
         className={cn(
-          "flex items-start justify-between w-full overflow-hidden transition-all duration-300 ease-in-out bg-primary/80 p-2 sm:p-3 rounded-lg shadow-md",
+          "flex items-start justify-between w-full overflow-hidden transition-all duration-300 ease-in-out p-2 sm:p-3 rounded-lg shadow-md",
+          headerBackgroundColor, // Apply dark, transparent background here
           isCollapsed ? "max-h-0 opacity-0 !p-0" : "max-h-48 opacity-100 mt-0.5 sm:mt-1"
         )}
         aria-hidden={isCollapsed}

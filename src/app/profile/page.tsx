@@ -27,7 +27,7 @@ export default function ProfilePage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 animated-page-gradient">
-      <Card className="w-full max-w-md text-center bg-card shadow-xl rounded-xl p-4">
+      <Card className="w-full max-w-md text-center bg-card/80 backdrop-blur-md shadow-2xl rounded-xl p-4 border border-border/50">
         <CardHeader>
           <div className="mx-auto mb-4 h-28 w-28 rounded-full overflow-hidden border-4 border-primary bg-secondary flex items-center justify-center shadow-lg">
             {user.photoURL ? (
@@ -48,14 +48,14 @@ export default function ProfilePage() {
           <Button
             onClick={() => router.push('/')}
             variant="outline"
-            className="w-full py-3 bg-background hover:bg-secondary text-foreground border-border hover:border-primary"
+            className="w-full py-3 bg-secondary/50 hover:bg-secondary/70 text-foreground border-border hover:border-primary"
           >
             <Gamepad2 className="mr-2 h-5 w-5" /> Back to Game
           </Button>
            <Button
             onClick={() => router.push('/leaderboard')}
             variant="outline"
-            className="w-full py-3 bg-background hover:bg-secondary text-foreground border-border hover:border-primary"
+            className="w-full py-3 bg-secondary/50 hover:bg-secondary/70 text-foreground border-border hover:border-primary"
            >
             <Crown className="mr-2 h-5 w-5" /> View Leaderboard
           </Button>

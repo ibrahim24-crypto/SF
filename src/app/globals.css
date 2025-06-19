@@ -8,53 +8,52 @@ body {
 
 @layer base {
   :root {
-    /* PRD Inspired Light Theme */
-    --background: 207 88% 94%; /* Light Blue #E3F2FD */
-    --foreground: 210 10% 25%; /* Dark Gray for text on light background */
+    /* Dark Theme - Deep Space Blues/Purples with Vibrant Accents */
+    --background: 220 30% 10%; /* Very Dark Blue/Charcoal */
+    --foreground: 220 15% 85%; /* Light Gray/Off-white */
 
-    --card: 0 0% 100%; /* White cards */
-    --card-foreground: 210 10% 25%; /* Dark Gray for text on cards */
+    --card: 220 30% 15%; /* Darker Blue/Charcoal for cards */
+    --card-foreground: 220 15% 85%;
 
-    --popover: 0 0% 100%; /* White popovers */
-    --popover-foreground: 210 10% 25%;
+    --popover: 220 30% 12%; /* Similar to card, slightly darker */
+    --popover-foreground: 220 15% 85%;
 
-    --primary: 217 90% 61%; /* Vivid Blue #4285F4 */
-    --primary-foreground: 0 0% 100%; /* White text on primary blue */
+    --primary: 190 80% 55%; /* Vibrant Cyan/Electric Blue */
+    --primary-foreground: 220 30% 10%; /* Dark for contrast on bright primary */
 
-    --secondary: 207 60% 88%; /* Lighter variant of primary/background blue */
-    --secondary-foreground: 210 10% 25%; /* Dark gray text on secondary */
+    --secondary: 220 25% 25%; /* Darker Muted Blue */
+    --secondary-foreground: 220 15% 75%;
 
-    --muted: 210 30% 80%; /* Light gray for muted text */
-    --muted-foreground: 210 20% 50%; /* Slightly darker gray for muted foreground */
+    --muted: 220 20% 30%; /* Muted Dark Blue/Gray */
+    --muted-foreground: 220 15% 65%; /* Lighter Muted Gray */
 
-    --accent: 36 100% 50%; /* Bright Orange #FF9800 */
-    --accent-foreground: 0 0% 100%; /* White text on orange accent */
+    --accent: 300 80% 60%; /* Vibrant Pink/Magenta */
+    --accent-foreground: 0 0% 100%; /* White text on accent */
 
-    --destructive: 0 70% 55%; /* A suitable red for destructive actions */
-    --destructive-foreground: 0 0% 100%; /* White text on destructive */
+    --destructive: 0 60% 50%; /* A suitable red for destructive actions */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 210 20% 85%; /* Light gray border */
-    --input: 0 0% 100%; /* White input background */
-    --ring: 217 90% 70%; /* Lighter primary blue for focus rings */
+    --border: 220 25% 20%; /* Border for cards, inputs */
+    --input: 220 30% 12%; /* Dark input background, slightly different from card */
+    --ring: 190 70% 65%; /* Lighter primary cyan for focus rings */
 
-    --chart-1: 217 90% 61%; /* primary */
-    --chart-2: 36 100% 50%; /* accent */
-    --chart-3: 180 65% 60%; /* A cyan/teal */
+    --chart-1: 190 80% 55%; /* primary */
+    --chart-2: 300 80% 60%; /* accent */
+    --chart-3: 210 75% 60%; /* A vivid mid-blue */
     --chart-4: 270 70% 65%; /* A purple */
-    --chart-5: 30 75% 55%; /* Another orange/yellow */
+    --chart-5: 30 75% 55%; /* An orange/yellow for contrast */
 
     --radius: 0.5rem;
 
     /* Sidebar colors (can be adjusted if sidebar is re-introduced with specific styling) */
-    /* For now, let them inherit general theme or be very simple */
-    --sidebar-background: 207 80% 90%; /* Slightly darker than main bg */
-    --sidebar-foreground: 210 10% 25%;
-    --sidebar-primary: 217 90% 61%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 207 60% 85%;
-    --sidebar-accent-foreground: 210 10% 25%;
-    --sidebar-border: 210 20% 80%;
-    --sidebar-ring: 217 90% 70%;
+    --sidebar-background: 220 30% 12%;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 190 80% 55%;
+    --sidebar-primary-foreground: 220 30% 10%;
+    --sidebar-accent: 220 25% 22%;
+    --sidebar-accent-foreground: 220 15% 85%;
+    --sidebar-border: 220 25% 18%;
+    --sidebar-ring: 190 70% 65%;
   }
 }
 
@@ -85,7 +84,7 @@ body {
 .explosion-line {
   position: absolute;
   height: 2px;
-  background-color: currentColor; /* Will use ball color, or primary for rainbow */
+  background-color: currentColor;
   top: 50%;
   left: 50%;
   transform-origin: 0% 50%;
@@ -131,25 +130,25 @@ body {
   transform-origin: center;
 }
 
-/* Animated Gradient Background for non-game pages (Cyan to Blue) */
-@keyframes animated-gradient {
+/* Animated Gradient Background for non-game pages (Dark theme) */
+@keyframes animated-gradient-dark {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
 .animated-page-gradient {
-  background: linear-gradient(-45deg, hsl(180, 65%, 55%), hsl(200, 75%, 60%), hsl(217, 80%, 65%), hsl(210, 70%, 50%));
+  background: linear-gradient(-45deg, hsl(240, 50%, 15%), hsl(260, 60%, 20%), hsl(280, 65%, 25%), hsl(220, 50%, 10%));
   background-size: 400% 400%;
-  animation: animated-gradient 15s ease infinite;
+  animation: animated-gradient-dark 15s ease infinite;
 }
 
-/* Gradient Text for Titles (Primary Blue to Cyan/Orange) */
+/* Gradient Text for Titles (Dark Theme: Cyan to Pink/Magenta) */
 .text-gradient-theme {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-cyan-500 to-blue-500;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-cyan-400 to-accent;
 }
 
-/* Game screen specific background */
+/* Game screen specific background (Dark theme) */
 .bg-game-screen {
-  background-color: hsl(var(--background)); /* This is Light Blue #E3F2FD from PRD */
+  background-color: hsl(220, 30%, 5%); /* Very dark, near black */
 }

@@ -13,8 +13,8 @@ interface GameOverOverlayProps {
 
 const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, highScore, onRestart }) => {
   return (
-    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md text-center bg-card shadow-xl rounded-xl p-2">
+    <div className="absolute inset-0 bg-background/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <Card className="w-full max-w-md text-center bg-card/80 backdrop-blur-sm shadow-2xl rounded-xl p-2 border border-border/50">
         <CardHeader className="p-6">
           <CardTitle className="text-4xl sm:text-5xl font-bold text-gradient-theme tracking-tight">Game Over!</CardTitle>
           <CardDescription className="text-md sm:text-lg text-muted-foreground mt-2">
@@ -29,7 +29,7 @@ const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, highScore, onR
           <Button
             onClick={onRestart}
             size="lg"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-md sm:text-lg py-3 px-6 w-full sm:w-auto shadow-md hover:shadow-lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-md sm:text-lg py-3 px-6 w-full sm:w-auto shadow-md hover:shadow-lg hover:shadow-primary/30"
           >
             <RotateCcw className="mr-2 h-5 w-5"/> Restart Game
           </Button>
@@ -37,7 +37,7 @@ const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, highScore, onR
             <Button
               variant="outline"
               size="lg"
-              className="text-md sm:text-lg py-3 px-6 w-full sm:w-auto bg-background hover:bg-secondary text-foreground border-border hover:border-primary"
+              className="text-md sm:text-lg py-3 px-6 w-full sm:w-auto bg-secondary/50 hover:bg-secondary/70 text-foreground border-border hover:border-primary"
             >
               <Crown className="mr-2 h-5 w-5"/> View Leaderboard
             </Button>

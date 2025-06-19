@@ -47,7 +47,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center animated-page-gradient p-4 pt-10">
-      <Card className="w-full max-w-2xl bg-card shadow-xl rounded-xl">
+      <Card className="w-full max-w-2xl bg-card/80 backdrop-blur-md shadow-2xl rounded-xl border border-border/50">
         <CardHeader className="text-center p-6">
           <Trophy className="mx-auto h-16 w-16 text-accent mb-3" />
           <CardTitle className="text-4xl font-bold text-gradient-theme tracking-tight">Leaderboard</CardTitle>
@@ -71,7 +71,7 @@ export default function LeaderboardPage() {
               </TableHeader>
               <TableBody>
                 {leaderboard.map((entry, index) => (
-                  <TableRow key={entry.id} className="border-b-border/70 hover:bg-secondary/50 transition-colors duration-150">
+                  <TableRow key={entry.id} className="border-b-border/70 hover:bg-secondary/30 transition-colors duration-150">
                     <TableCell className="font-bold text-lg text-center text-primary">{index + 1}</TableCell>
                     <TableCell className="text-lg text-foreground/90">{entry.username}</TableCell>
                     <TableCell className="text-right font-semibold text-xl text-accent">{entry.highScore}</TableCell>
@@ -85,7 +85,7 @@ export default function LeaderboardPage() {
            <Link href="/" passHref>
             <Button
               variant="outline"
-              className="py-3 px-6 text-base bg-background hover:bg-secondary text-foreground border-border hover:border-primary"
+              className="py-3 px-6 text-base bg-secondary/50 hover:bg-secondary/70 text-foreground border-border hover:border-primary"
             >
               <Gamepad2 className="mr-2 h-5 w-5" /> Back to Game
             </Button>

@@ -1,6 +1,7 @@
 import type {Config} from 'tailwindcss';
 
 export default {
+  darkMode: 'class', // Enable dark mode based on class
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -60,7 +61,7 @@ export default {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        sidebar: { // These might not be heavily used if sidebar isn't a primary feature
+        sidebar: {
           DEFAULT: 'hsl(var(--sidebar-background))',
           foreground: 'hsl(var(--sidebar-foreground))',
           primary: 'hsl(var(--sidebar-primary))',
@@ -70,8 +71,8 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
-        'game-screen': { // This class is applied directly via globals.css
-          DEFAULT: 'hsl(var(--background))', // Ensures game screen uses the PRD light blue
+        'game-screen': {
+          DEFAULT: 'hsl(220, 30%, 5%)', // Corresponds to the .bg-game-screen class
         }
       },
       borderRadius: {
@@ -111,7 +112,7 @@ export default {
             opacity: '0.5',
           },
           '100%': {
-            transform: 'translate(0, 0) scale(1)', // Updated for new logic
+            transform: 'translate(0, 0) scale(1)', 
             opacity: '1',
           },
         },
@@ -120,12 +121,12 @@ export default {
           '50%': { transform: 'scale(1.5) rotate(15deg)', opacity: '0.7' },
           '100%': { transform: 'scale(0.5) rotate(-15deg)', opacity: '0' },
         },
-        'animated-gradient': { // For the cyan-blue page background
+        'animated-gradient-dark': { 
             '0%': { 'background-position': '0% 50%' },
             '50%': { 'background-position': '100% 50%' },
             '100%': { 'background-position': '0% 50%' },
         },
-        'pulse-ball': { // Re-added in case it was missed
+        'pulse-ball': { 
           '0%': { transform: 'translate(-50%, -50%) scale(1)' },
           '50%': { transform: 'translate(-50%, -50%) scale(1.5)' },
           '100%': { transform: 'translate(-50%, -50%) scale(1)' },
@@ -138,8 +139,8 @@ export default {
         'explode-line': 'explode-line 0.3s forwards',
         'big-ball-bonus': 'big-ball-bonus-animation 0.7s ease-out forwards',
         'life-lost': 'life-lost-animation 0.5s forwards',
-        'animated-gradient': 'animated-gradient 15s ease infinite',
-        'pulse-ball': 'pulse-ball 0.3s ease-in-out', // Re-added
+        'animated-gradient': 'animated-gradient-dark 15s ease infinite', // Updated to use dark animation
+        'pulse-ball': 'pulse-ball 0.3s ease-in-out',
       },
       backgroundSize: {
         '400%': '400% 400%',

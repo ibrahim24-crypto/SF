@@ -78,7 +78,7 @@ export default function LoginPage() {
     await signInWithGoogle();
   };
 
-  if (authLoading && !user) { // Show loader only if not yet authenticated and still loading
+  if (authLoading && !user) { 
     return (
       <div className="flex min-h-screen items-center justify-center animated-page-gradient p-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -86,7 +86,7 @@ export default function LoginPage() {
     );
   }
 
-  if (user && !authLoading) { // If user is loaded and exists, redirect handled by useEffect, return null to prevent flash
+  if (user && !authLoading) { 
     return null;
   }
 
@@ -94,7 +94,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 animated-page-gradient">
-      <Card className="w-full max-w-md bg-card shadow-xl rounded-xl p-4 sm:p-6">
+      <Card className="w-full max-w-md bg-card/80 backdrop-blur-md shadow-2xl rounded-xl p-4 sm:p-6 border border-border/50">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl sm:text-4xl font-bold text-gradient-theme mb-2 sm:mb-3 tracking-tight">
             {isLoginMode ? 'Welcome Back' : 'Create Account'}
@@ -130,7 +130,7 @@ export default function LoginPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-primary/40 focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-primary/30 focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 disabled={isLoading}
               >
                 {isLoading && isLoginSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -173,7 +173,7 @@ export default function LoginPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-primary/40 focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-2.5 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-primary/30 focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 disabled={isLoading}
               >
                 {isLoading && isSignupSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -186,12 +186,12 @@ export default function LoginPage() {
               <span className="w-full border-t border-border/70" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              <span className="bg-card/80 backdrop-blur-md px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
           <Button
             variant="outline"
-            className="w-full flex items-center justify-center gap-2 bg-background hover:bg-secondary text-foreground font-medium py-2.5 px-4 rounded-lg border-border hover:border-primary/70 transition-all duration-200 hover:shadow-md focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="w-full flex items-center justify-center gap-2 bg-secondary/50 hover:bg-secondary/70 text-foreground font-medium py-2.5 px-4 rounded-lg border-border hover:border-primary/70 transition-all duration-200 hover:shadow-lg focus:ring-2 focus:ring-ring focus:ring-offset-2"
             onClick={handleGoogleSignIn}
             disabled={isLoading && !isLoginSubmitting && !isSignupSubmitting}
           >

@@ -80,7 +80,7 @@ const GameScreen: React.FC = () => {
 
   useEffect(() => {
     if (!authLoading && !user) { // User logged out
-      setGameStarted(false); // Go back to start screen
+      setGameStarted(false); 
       setIsInstantExplodeModeActive(false);
       setInstantExplodeUserPreference(true);
       setShowInstantExplodeBanner(false);
@@ -212,7 +212,7 @@ const GameScreen: React.FC = () => {
 
   const getBallColor = useCallback((): string => {
     if (score > 500) return 'rainbow-gradient';
-    return 'hsl(0 0% 100%)'; // White
+    return 'hsl(0 0% 100%)'; // White balls
   }, [score]);
 
   const generateBall = useCallback(() => {
@@ -229,7 +229,7 @@ const GameScreen: React.FC = () => {
       isExploding: false,
     };
     setBalls((prevBalls) => [...prevBalls, newBallData]);
-  }, [getBallColor, isClient, gameOver, setBalls, score]);
+  }, [getBallColor, isClient, gameOver, setBalls]);
 
 
   useEffect(() => {
@@ -320,13 +320,13 @@ const GameScreen: React.FC = () => {
 
     setBallPulseAnimationTrigger(prev => prev + 1);
 
-    if (isInstantExplodeModeActive) return; // Don't allow re-triggering if already active via any means
+    if (isInstantExplodeModeActive) return;
 
     setScoreAreaClickCount(prevCount => {
       const newCount = prevCount + 1;
       if (newCount >= SECRET_CLICK_TARGET) {
         setIsInstantExplodeModeActive(true);
-        setInstantExplodeUserPreference(true); // Also enable user preference by default
+        setInstantExplodeUserPreference(true); 
         setShowInstantExplodeBanner(true);
         setTimeout(() => {
             toast({ title: "🤫 Secret Activated!", description: "Instant Explode Mode is ON!", duration: 5000, className: "bg-accent text-accent-foreground border-accent" });
@@ -427,7 +427,7 @@ const GameScreen: React.FC = () => {
       )}
 
       {showInstantExplodeBanner && instantExplodeUserPreference && (
-         <div className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 bg-primary/95 backdrop-blur-sm text-primary-foreground px-4 py-2 sm:px-6 sm:py-3 rounded-lg shadow-xl z-[60] text-center transition-opacity duration-500 opacity-100 animate-pulse border border-primary">
+         <div className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 bg-primary/95 backdrop-blur-sm text-primary-foreground px-4 py-2 sm:px-6 sm:py-3 rounded-lg shadow-xl z-[60] text-center transition-opacity duration-500 opacity-100 animate-pulse border border-primary-foreground/30">
           <p className="text-md sm:text-lg font-semibold">⚡ Instant Explode Mode Active! ⚡</p>
           <p className="text-xs sm:text-sm">Hover or tap balls to pop them instantly!</p>
         </div>

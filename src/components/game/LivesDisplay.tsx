@@ -7,8 +7,8 @@ interface LivesDisplayProps {
 
 const LivesDisplay: React.FC<LivesDisplayProps> = ({ livesState }) => {
   return (
-    <div className="flex flex-wrap gap-1 sm:gap-2 items-center p-0"> {/* Use gap for spacing, flex-wrap for wrapping */}
-      <span className="text-lg sm:text-2xl font-headline font-semibold text-primary-foreground mr-1 sm:mr-2">Lives:</span>
+    <div className="flex flex-wrap gap-1 sm:gap-2 items-center p-0"> 
+      <span className="text-lg sm:text-2xl font-headline font-semibold text-foreground mr-1 sm:mr-2">Lives:</span>
       {livesState.map((life) => (
         <div
           key={life.id}

@@ -8,13 +8,13 @@ interface ExplosionEffectProps {
 
 const ExplosionEffect: React.FC<ExplosionEffectProps> = ({ color, size }) => {
   const lines = 8;
-  const explosionLineLength = size * 1.5; // Make explosion lines a bit larger than the ball
+  const explosionLineLength = size * 1.5; 
 
   let lineColor = color;
   if (color === 'rainbow-gradient') {
-    lineColor = 'hsl(var(--primary))'; // Use primary for rainbow lines
+    lineColor = 'hsl(var(--primary))'; 
   } else if (color === 'hsl(0 0% 100%)') { // if ball is white
-    lineColor = 'hsl(var(--foreground))'; // Use foreground color for explosion lines
+    lineColor = 'hsl(var(--foreground))'; // Use light foreground color for explosion lines on dark background
   }
 
 
