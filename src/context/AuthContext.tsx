@@ -4,12 +4,12 @@
 import type { User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signInAnonymously as firebaseSignInAnonymously } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
-interface UserProfile {
+export interface UserProfile {
   uid: string;
   email: string | null;
   username: string | null;
@@ -27,6 +27,7 @@ interface AuthContextType {
   signInAnonymously: (pseudo: string) => Promise<void>;
   logOut: () => Promise<void>;
   updateUserHighScore: (score: number) => Promise<void>;
+  updateUserProfileData: (data: { newUsername?: string; newAvatarFile?: File }) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,10 +45,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userDocSnap.exists()) {
           setUser({ uid: firebaseUser.uid, ...userDocSnap.data() } as UserProfile);
         } else {
-          // This case might be hit if an anonymous user was created but their doc wasn't set yet,
-          // or for a new Google/Email user if doc creation failed before.
-          // For anonymous users, their profile is explicitly created in signInAnonymously.
-          // For new Google/Email users, profile creation is handled in their respective sign-in functions.
           if (!firebaseUser.isAnonymous) {
             const newUserProfile: UserProfile = {
               uid: firebaseUser.uid,
@@ -57,12 +54,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               highScore: 0,
               isAnonymous: false,
             };
-            await setDoc(userDocRef, { ...newUserProfile, createdAt: serverTimestamp() });
+            await setDoc(userDocRef, { ...newUserProfile, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
             setUser(newUserProfile);
-          } else {
-             // If an anonymous user lands here and has no doc, it's an edge case.
-             // For now, we assume signInAnonymously handles doc creation.
-             // If needed, we could create a default anonymous profile here too.
           }
         }
       } else {
@@ -90,7 +83,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             highScore: 0,
             isAnonymous: false,
           };
-          await setDoc(userDocRef, { ...newUserProfile, createdAt: serverTimestamp() });
+          await setDoc(userDocRef, { ...newUserProfile, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
           setUser(newUserProfile);
         } else {
            setUser({ uid: result.user.uid, ...userDocSnap.data() } as UserProfile);
@@ -112,7 +105,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUpWithEmail = async (email: string, password: string, username: string) => {
     setLoading(true);
     try {
-      // Check if username already exists
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('username', '==', username));
       const querySnapshot = await getDocs(q);
@@ -134,7 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         highScore: 0,
         isAnonymous: false,
       };
-      await setDoc(doc(db, "users", userCredential.user.uid), { ...newUserProfile, createdAt: serverTimestamp() });
+      await setDoc(doc(db, "users", userCredential.user.uid), { ...newUserProfile, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
       setUser(newUserProfile);
       toast({ title: "Signed up successfully!" });
     } catch (error: any) {
@@ -176,9 +168,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const newUserProfile: UserProfile = {
         uid: firebaseUser.uid,
-        email: null, // Anonymous users don't have email by default
+        email: null, 
         username: pseudo,
-        photoURL: null, // Anonymous users don't have photoURL by default
+        photoURL: null,
         highScore: 0,
         isAnonymous: true,
       };
@@ -192,7 +184,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   };
-
 
   const logOut = async () => {
     setLoading(true);
@@ -223,8 +214,90 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateUserProfileData = async (data: { newUsername?: string; newAvatarFile?: File }): Promise<{ success: boolean; message: string }> => {
+    if (!auth.currentUser) {
+      return { success: false, message: "No user logged in." };
+    }
+    if (user?.isAnonymous) {
+      return { success: false, message: "Guest users cannot update their profile." };
+    }
+
+    setLoading(true);
+    const currentUser = auth.currentUser;
+    const userDocRef = doc(db, "users", currentUser.uid);
+    const updates: Partial<UserProfile> = {};
+    let authProfileUpdates: { displayName?: string; photoURL?: string } = {};
+
+    try {
+      // Handle Username Update
+      if (data.newUsername && data.newUsername !== user?.username) {
+        const currentUsername = data.newUsername.trim();
+        if (currentUsername.length < 3 || currentUsername.length > 20) {
+          setLoading(false);
+          return { success: false, message: "Username must be between 3 and 20 characters." };
+        }
+
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, where('username', '==', currentUsername));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          setLoading(false);
+          return { success: false, message: "Username already taken. Please choose another." };
+        }
+        updates.username = currentUsername;
+        authProfileUpdates.displayName = currentUsername;
+      }
+
+      // Handle Avatar Update (Conceptual: Firebase Storage upload needed here)
+      let newPhotoURL: string | undefined = undefined;
+      if (data.newAvatarFile) {
+        // ======================================================================
+        // TODO: Implement Firebase Storage upload here
+        // 1. Get a reference to Firebase Storage (e.g., import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";)
+        // 2. Create a storage reference (e.g., const storageRef = ref(getStorage(), `avatars/${currentUser.uid}/${data.newAvatarFile.name}`);)
+        // 3. Upload the file (e.g., const snapshot = await uploadBytes(storageRef, data.newAvatarFile);)
+        // 4. Get the download URL (e.g., newPhotoURL = await getDownloadURL(snapshot.ref);)
+        // Handle errors during upload.
+        // For now, this part is illustrative.
+        // ======================================================================
+        toast({ title: "Avatar Upload Note", description: "Avatar file selected. Actual upload to Firebase Storage is not implemented in this prototype.", variant: "default", duration: 7000 });
+        // To simulate, if you had a photoURL, you would set it:
+        // updates.photoURL = newPhotoURL;
+        // authProfileUpdates.photoURL = newPhotoURL;
+      }
+      
+      const batch = writeBatch(db);
+
+      if (Object.keys(authProfileUpdates).length > 0) {
+        await updateProfile(currentUser, authProfileUpdates);
+      }
+      if (Object.keys(updates).length > 0) {
+         batch.update(userDocRef, { ...updates, updatedAt: serverTimestamp() });
+      }
+      
+      await batch.commit();
+
+      // Optimistically update local state
+      setUser(prevUser => {
+        if (!prevUser) return null;
+        let updatedUser = { ...prevUser };
+        if (updates.username) updatedUser.username = updates.username;
+        // if (updates.photoURL) updatedUser.photoURL = updates.photoURL; // Uncomment if actual photoURL update happens
+        return updatedUser;
+      });
+
+      setLoading(false);
+      return { success: true, message: "Profile updated successfully!" };
+
+    } catch (error: any) {
+      console.error("Profile Update Error:", error);
+      setLoading(false);
+      return { success: false, message: error.message || "Failed to update profile." };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signUpWithEmail, logInWithEmail, signInAnonymously, logOut, updateUserHighScore }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signUpWithEmail, logInWithEmail, signInAnonymously, logOut, updateUserHighScore, updateUserProfileData }}>
       {children}
     </AuthContext.Provider>
   );
