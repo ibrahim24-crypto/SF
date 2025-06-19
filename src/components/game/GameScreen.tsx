@@ -171,10 +171,14 @@ const GameScreen: React.FC = () => {
                 localStorage.setItem(HIGH_SCORE_KEY, score.toString());
                 if (user) {
                   updateUserHighScore(score).then(() => {
-                     toast({ title: "New High Score!", description: `Your new high score ${score} is saved online.`});
+                    setTimeout(() => {
+                      toast({ title: "New High Score!", description: `Your new high score ${score} is saved online.`});
+                    }, 0);
                   });
                 } else {
-                   toast({ title: "New Local High Score!", description: `Your new high score is ${score}. Log in to save online!`});
+                  setTimeout(() => {
+                    toast({ title: "New Local High Score!", description: `Your new high score is ${score}. Log in to save online!`});
+                  }, 0);
                 }
               }
               setGameOver(true);
@@ -279,7 +283,9 @@ const GameScreen: React.FC = () => {
     setIsInstantExplodeModeActive(instantMode);
     if (instantMode) {
       setShowInstantExplodeBanner(true);
-      toast({ title: "⚡ Instant Explode Mode Active! ⚡", description: "Hover or tap balls to pop them instantly!", duration: 5000 });
+      setTimeout(() => {
+        toast({ title: "⚡ Instant Explode Mode Active! ⚡", description: "Hover or tap balls to pop them instantly!", duration: 5000 });
+      }, 0);
     } else {
       setShowInstantExplodeBanner(false);
     }
@@ -397,4 +403,3 @@ const GameScreen: React.FC = () => {
 };
 
 export default GameScreen;
-

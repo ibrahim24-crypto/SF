@@ -10,7 +10,7 @@ interface ScoreDisplayProps {
 const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ score, highScore, onScoreAreaClick }) => {
   return (
     <div
-      className="bg-primary/80 text-primary-foreground p-2 sm:p-3 rounded-lg shadow-md flex flex-col space-y-0.5 sm:space-y-1 items-start cursor-pointer select-none"
+      className="bg-primary/80 text-primary-foreground p-2 sm:p-3 rounded-lg shadow-md flex flex-col space-y-0.5 sm:space-y-1 items-start select-none"
       onClick={onScoreAreaClick}
       aria-label="Score and high score display"
     >
@@ -21,4 +21,3 @@ const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ score, highScore, onScoreAr
 };
 
 export default ScoreDisplay;
-

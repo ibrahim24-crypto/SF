@@ -7,7 +7,7 @@ interface LivesDisplayProps {
 
 const LivesDisplay: React.FC<LivesDisplayProps> = ({ livesState }) => {
   return (
-    <div className="flex space-x-1 sm:space-x-2 items-center bg-primary/80 p-2 sm:p-3 rounded-lg shadow-md">
+    <div className="flex flex-wrap space-x-1 sm:space-x-2 items-center bg-primary/80 p-2 sm:p-3 rounded-lg shadow-md">
       <span className="text-lg sm:text-2xl font-headline font-semibold text-primary-foreground mr-1 sm:mr-2">Lives:</span>
       {livesState.map((life) => (
         <div
