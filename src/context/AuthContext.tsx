@@ -13,7 +13,7 @@ export interface UserProfile {
   uid: string;
   email: string | null;
   username: string | null;
-  photoURL?: string | null;
+  photoURL?: string | null; // Can now be a Data URI
   highScore?: number;
   isAnonymous?: boolean;
 }
@@ -45,18 +45,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userDocSnap.exists()) {
           setUser({ uid: firebaseUser.uid, ...userDocSnap.data() } as UserProfile);
         } else {
+          // This case handles users who signed up but for some reason their Firestore doc wasn't created
+          // Or for new users signing in via Google/Email for the first time.
           if (!firebaseUser.isAnonymous) {
             const newUserProfile: UserProfile = {
               uid: firebaseUser.uid,
               email: firebaseUser.email,
               username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-              photoURL: firebaseUser.photoURL,
+              photoURL: firebaseUser.photoURL, // Can be null or from provider
               highScore: 0,
               isAnonymous: false,
             };
             await setDoc(userDocRef, { ...newUserProfile, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
             setUser(newUserProfile);
           }
+          // Anonymous users' profiles are created during their specific signInAnonymously flow.
         }
       } else {
         setUser(null);
@@ -122,7 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         uid: userCredential.user.uid,
         email: userCredential.user.email,
         username: username,
-        photoURL: userCredential.user.photoURL, 
+        photoURL: userCredential.user.photoURL, // Initially null for email sign-up
         highScore: 0,
         isAnonymous: false,
       };
@@ -170,7 +173,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         uid: firebaseUser.uid,
         email: null, 
         username: pseudo,
-        photoURL: null,
+        photoURL: null, // Anonymous users start with no photo
         highScore: 0,
         isAnonymous: true,
       };
@@ -209,9 +212,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("Error updating high score in Firebase:", error);
-        toast({ title: "Error Syncing Score", description: "Could not update high score in Firebase.", variant: "destructive" });
+        // Consider only showing toast if it's a critical failure or for user feedback.
+        // toast({ title: "Error Syncing Score", description: "Could not update high score in Firebase.", variant: "destructive" });
       }
     }
+  };
+
+  const convertFileToDataURI = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        resolve(reader.result as string);
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const updateUserProfileData = async (data: { newUsername?: string; newAvatarFile?: File }): Promise<{ success: boolean; message: string }> => {
@@ -241,29 +258,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const q = query(usersRef, where('username', '==', currentUsername));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
-          setLoading(false);
-          return { success: false, message: "Username already taken. Please choose another." };
+          // Check if the found user is the current user (in case of case change or something)
+          let conflict = false;
+          querySnapshot.forEach(doc => {
+            if (doc.id !== currentUser.uid) {
+              conflict = true;
+            }
+          });
+          if (conflict) {
+            setLoading(false);
+            return { success: false, message: "Username already taken. Please choose another." };
+          }
         }
         updates.username = currentUsername;
         authProfileUpdates.displayName = currentUsername;
       }
 
-      // Handle Avatar Update (Conceptual: Firebase Storage upload needed here)
-      let newPhotoURL: string | undefined = undefined;
+      // Handle Avatar Update by converting to Data URI
       if (data.newAvatarFile) {
-        // ======================================================================
-        // TODO: Implement Firebase Storage upload here
-        // 1. Get a reference to Firebase Storage (e.g., import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";)
-        // 2. Create a storage reference (e.g., const storageRef = ref(getStorage(), `avatars/${currentUser.uid}/${data.newAvatarFile.name}`);)
-        // 3. Upload the file (e.g., const snapshot = await uploadBytes(storageRef, data.newAvatarFile);)
-        // 4. Get the download URL (e.g., newPhotoURL = await getDownloadURL(snapshot.ref);)
-        // Handle errors during upload.
-        // For now, this part is illustrative.
-        // ======================================================================
-        toast({ title: "Avatar Upload Note", description: "Avatar file selected. Actual upload to Firebase Storage is not implemented in this prototype.", variant: "default", duration: 7000 });
-        // To simulate, if you had a photoURL, you would set it:
-        // updates.photoURL = newPhotoURL;
-        // authProfileUpdates.photoURL = newPhotoURL;
+        if (data.newAvatarFile.size > 1024 * 500) { // Limit to ~500KB for Data URI
+          setLoading(false);
+          return { success: false, message: "Avatar image is too large. Please choose a smaller file (under 500KB)." };
+        }
+        try {
+          const dataUri = await convertFileToDataURI(data.newAvatarFile);
+          updates.photoURL = dataUri;
+          authProfileUpdates.photoURL = dataUri; // Firebase Auth photoURL can also take Data URIs
+        } catch (error) {
+          console.error("Error converting file to Data URI:", error);
+          setLoading(false);
+          return { success: false, message: "Could not process avatar image." };
+        }
       }
       
       const batch = writeBatch(db);
@@ -277,12 +302,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       await batch.commit();
 
-      // Optimistically update local state
       setUser(prevUser => {
         if (!prevUser) return null;
         let updatedUser = { ...prevUser };
         if (updates.username) updatedUser.username = updates.username;
-        // if (updates.photoURL) updatedUser.photoURL = updates.photoURL; // Uncomment if actual photoURL update happens
+        if (updates.photoURL) updatedUser.photoURL = updates.photoURL;
         return updatedUser;
       });
 

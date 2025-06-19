@@ -12,15 +12,33 @@ import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
+// Inline SVG for ShieldQuestion (Guest)
+const ShieldQuestionIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shield-question text-primary">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
+    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+    <path d="M12 17h.01"/>
+  </svg>
+);
+
+// Inline SVG for User (Default placeholder)
+const UserIconPlaceholder = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user text-primary">
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+
+
 export default function ProfilePage() {
   const { user, loading, logOut, updateUserProfileData } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editableUsername, setEditableUsername] = useState(user?.username || '');
+  const [editableUsername, setEditableUsername] = useState('');
   const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.photoURL || null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -34,7 +52,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center animated-page-gradient p-4">
+      <div className="flex min-h-screen items-center justify-center p-4 animated-page-gradient">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -48,6 +66,14 @@ export default function ProfilePage() {
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
+      if (file.size > 1024 * 500) { // Approx 500KB limit for Data URI
+        toast({ title: "File Too Large", description: "Please select an image under 500KB.", variant: "destructive" });
+        setSelectedAvatarFile(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = ""; 
+        }
+        return;
+      }
       setSelectedAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -62,14 +88,20 @@ export default function ProfilePage() {
       toast({ title: "Error", description: "Cannot update guest profile.", variant: "destructive" });
       return;
     }
-    if (!editableUsername.trim()) {
+    const trimmedUsername = editableUsername.trim();
+    if (!trimmedUsername) {
       toast({ title: "Validation Error", description: "Username cannot be empty.", variant: "destructive" });
       return;
     }
+    if (trimmedUsername.length < 3 || trimmedUsername.length > 20) {
+      toast({ title: "Validation Error", description: "Username must be between 3 and 20 characters.", variant: "destructive" });
+      return;
+    }
+
 
     setIsSaving(true);
     const result = await updateUserProfileData({
-      newUsername: editableUsername.trim() !== user.username ? editableUsername.trim() : undefined,
+      newUsername: trimmedUsername !== user.username ? trimmedUsername : undefined,
       newAvatarFile: selectedAvatarFile || undefined,
     });
     setIsSaving(false);
@@ -77,7 +109,10 @@ export default function ProfilePage() {
     if (result.success) {
       toast({ title: "Profile Updated", description: result.message, className: "bg-primary text-primary-foreground border-primary" });
       setIsEditing(false);
-      setSelectedAvatarFile(null); // Clear selected file after successful save
+      setSelectedAvatarFile(null); 
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } else {
       toast({ title: "Update Failed", description: result.message, variant: "destructive" });
     }
@@ -88,6 +123,9 @@ export default function ProfilePage() {
     setEditableUsername(user.username || '');
     setAvatarPreview(user.photoURL || null);
     setSelectedAvatarFile(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
   };
 
   const triggerFileSelect = () => {
@@ -97,6 +135,8 @@ export default function ProfilePage() {
   };
 
   const canEditProfile = !user.isAnonymous;
+
+  const displayAvatar = avatarPreview || user.photoURL;
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 animated-page-gradient">
@@ -113,29 +153,30 @@ export default function ProfilePage() {
                 <span className="text-xs">Change</span>
               </button>
             ) : null}
-            <Image
-              src={avatarPreview || (user.isAnonymous ? '/shield-question-placeholder.svg' : '/user-placeholder.svg')}
-              alt={user.username || 'User'}
-              width={128}
-              height={128}
-              className="object-cover"
-              onError={(e) => {
-                // Fallback for broken images or non-existent SVGs
-                const target = e.target as HTMLImageElement;
-                if (user.isAnonymous) target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNoaWVsZC1xdWVzdGlvbiI+PHBhdGggZD0iTTIgMmg2bDIgNGgybDIgNGgybDIgNGgtMTJaIi8+PHBhdGggZD0iTTExIDEydi4wMW0wIDRhMiAyIDAgMSAwLTQgMCAyIDIgMCAxIDAgNCAwWm0tMS00YTItMy41IDAgMCAxIDQtMy41Ii8+PC9zdmc+'; // shield question
-                else target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXVzZXIiPjxwYXRoIGQ9Ik0yMCAyMWE4IDggMCAwIDAtMTYgMHoiLz48Y2lyY2xlIGN4PSIxMiIgY3k9IjciIHI9IjQiLz48L3N2Zz4='; // user icon
-              }}
-            />
+            
+            {displayAvatar ? (
+              <Image
+                src={displayAvatar}
+                alt={user.username || 'User'}
+                width={128}
+                height={128}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                {user.isAnonymous ? <ShieldQuestionIcon /> : <UserIconPlaceholder />}
+              </div>
+            )}
+
             {isEditing && canEditProfile && (
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleAvatarChange}
-                accept="image/*"
+                accept="image/png, image/jpeg, image/gif, image/webp"
                 className="hidden"
               />
             )}
-             {!avatarPreview && (user.isAnonymous ? <ShieldQuestion className="h-24 w-24 text-primary absolute" /> : <User className="h-24 w-24 text-primary absolute" />)}
           </div>
           {isEditing && canEditProfile ? (
             <div className="mb-3">
