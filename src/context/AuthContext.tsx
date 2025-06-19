@@ -3,8 +3,8 @@
 
 import type { User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signInAnonymously as firebaseSignInAnonymously } from 'firebase/auth';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ interface UserProfile {
   username: string | null;
   photoURL?: string | null;
   highScore?: number;
+  isAnonymous?: boolean;
 }
 
 interface AuthContextType {
@@ -23,6 +24,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   signUpWithEmail: (email: string, password: string, username: string) => Promise<void>;
   logInWithEmail: (email: string, password: string) => Promise<void>;
+  signInAnonymously: (pseudo: string) => Promise<void>;
   logOut: () => Promise<void>;
   updateUserHighScore: (score: number) => Promise<void>;
 }
@@ -42,16 +44,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userDocSnap.exists()) {
           setUser({ uid: firebaseUser.uid, ...userDocSnap.data() } as UserProfile);
         } else {
-          // New user (e.g. first Google sign-in), create profile
-          const newUserProfile: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-            photoURL: firebaseUser.photoURL,
-            highScore: 0,
-          };
-          await setDoc(userDocRef, { ...newUserProfile, createdAt: serverTimestamp() });
-          setUser(newUserProfile);
+          // This case might be hit if an anonymous user was created but their doc wasn't set yet,
+          // or for a new Google/Email user if doc creation failed before.
+          // For anonymous users, their profile is explicitly created in signInAnonymously.
+          // For new Google/Email users, profile creation is handled in their respective sign-in functions.
+          if (!firebaseUser.isAnonymous) {
+            const newUserProfile: UserProfile = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+              photoURL: firebaseUser.photoURL,
+              highScore: 0,
+              isAnonymous: false,
+            };
+            await setDoc(userDocRef, { ...newUserProfile, createdAt: serverTimestamp() });
+            setUser(newUserProfile);
+          } else {
+             // If an anonymous user lands here and has no doc, it's an edge case.
+             // For now, we assume signInAnonymously handles doc creation.
+             // If needed, we could create a default anonymous profile here too.
+          }
         }
       } else {
         setUser(null);
@@ -76,9 +88,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             username: result.user.displayName || result.user.email?.split('@')[0] || 'User',
             photoURL: result.user.photoURL,
             highScore: 0,
+            isAnonymous: false,
           };
           await setDoc(userDocRef, { ...newUserProfile, createdAt: serverTimestamp() });
-          setUser(newUserProfile); // Set user in context immediately
+          setUser(newUserProfile);
         } else {
            setUser({ uid: result.user.uid, ...userDocSnap.data() } as UserProfile);
         }
@@ -99,6 +112,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signUpWithEmail = async (email: string, password: string, username: string) => {
     setLoading(true);
     try {
+      // Check if username already exists
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('username', '==', username));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        toast({ title: "Sign-Up Failed", description: "Username already taken. Please choose another.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: username });
       
@@ -106,8 +130,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         uid: userCredential.user.uid,
         email: userCredential.user.email,
         username: username,
-        photoURL: userCredential.user.photoURL, // Will be null initially for email sign up
+        photoURL: userCredential.user.photoURL, 
         highScore: 0,
+        isAnonymous: false,
       };
       await setDoc(doc(db, "users", userCredential.user.uid), { ...newUserProfile, createdAt: serverTimestamp() });
       setUser(newUserProfile);
@@ -124,7 +149,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged will handle setting the user
       toast({ title: "Logged in successfully!" });
     } catch (error: any)      {
       console.error("Email Login Error:", error);
@@ -133,6 +157,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   };
+
+  const signInAnonymously = async (pseudo: string) => {
+    setLoading(true);
+    try {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('username', '==', pseudo));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        toast({ title: "Login Failed", description: "This pseudo is already taken. Please choose another.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      const userCredential = await firebaseSignInAnonymously(auth);
+      const firebaseUser = userCredential.user;
+
+      const newUserProfile: UserProfile = {
+        uid: firebaseUser.uid,
+        email: null, // Anonymous users don't have email by default
+        username: pseudo,
+        photoURL: null, // Anonymous users don't have photoURL by default
+        highScore: 0,
+        isAnonymous: true,
+      };
+      await setDoc(doc(db, "users", firebaseUser.uid), { ...newUserProfile, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+      setUser(newUserProfile);
+      toast({ title: "Logged in as guest successfully!" });
+    } catch (error: any) {
+      console.error("Anonymous Sign-In Error:", error);
+      toast({ title: "Anonymous Login Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const logOut = async () => {
     setLoading(true);
@@ -152,9 +212,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) {
       const userDocRef = doc(db, "users", user.uid);
       try {
-        // Check if the new score is actually higher before updating
         if (score > (user.highScore || 0)) {
-          await updateDoc(userDocRef, { highScore: score });
+          await updateDoc(userDocRef, { highScore: score, updatedAt: serverTimestamp() });
           setUser(prevUser => prevUser ? { ...prevUser, highScore: score } : null);
         }
       } catch (error) {
@@ -165,7 +224,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signUpWithEmail, logInWithEmail, logOut, updateUserHighScore }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signUpWithEmail, logInWithEmail, signInAnonymously, logOut, updateUserHighScore }}>
       {children}
     </AuthContext.Provider>
   );

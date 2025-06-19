@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
-import { Loader2, User, LogOut, Crown, Gamepad2 } from 'lucide-react';
+import { Loader2, User, LogOut, Crown, Gamepad2, ShieldQuestion } from 'lucide-react';
 import Image from 'next/image';
 
 export default function ProfilePage() {
@@ -32,12 +32,19 @@ export default function ProfilePage() {
           <div className="mx-auto mb-4 h-28 w-28 rounded-full overflow-hidden border-4 border-primary bg-secondary flex items-center justify-center shadow-lg">
             {user.photoURL ? (
               <Image src={user.photoURL} alt={user.username || 'User'} width={112} height={112} className="object-cover" />
+            ) : user.isAnonymous ? (
+              <ShieldQuestion className="h-20 w-20 text-primary" />
             ) : (
               <User className="h-20 w-20 text-primary" />
             )}
           </div>
-          <CardTitle className="text-3xl font-bold text-gradient-theme tracking-tight">{user.username || 'User Profile'}</CardTitle>
-          <CardDescription className="text-muted-foreground">{user.email}</CardDescription>
+          <CardTitle className="text-3xl font-bold text-gradient-theme tracking-tight">
+            {user.username || 'User Profile'}
+            {user.isAnonymous && <span className="block text-sm font-normal text-muted-foreground">(Guest Account)</span>}
+          </CardTitle>
+          <CardDescription className="text-muted-foreground">
+            {user.email ? user.email : user.isAnonymous ? 'No email associated' : 'Email not available'}
+          </CardDescription>
         </CardHeader>
         <CardContent className="mt-4">
           <p className="text-2xl font-semibold text-foreground">
