@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,31 +8,42 @@ body {
 
 @layer base {
   :root {
-    --background: 210 10% 15%; /* Dark Background */
-    --foreground: 0 0% 98%; /* Light Text */
-    --card: 210 10% 15%;
-    --card-foreground: 0 0% 98%;
-    --popover: 210 10% 15%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 217 89% 60%; /* Vivid Blue (remains bright) */
+    --background: 220 15% 12%; /* Very Dark Blue/Gray */
+    --foreground: 210 30% 95%; /* Light Gray/White */
+
+    --card: 220 15% 10%; /* Darker for card base before opacity/blur */
+    --card-foreground: 210 30% 95%;
+
+    --popover: 220 15% 8%;
+    --popover-foreground: 210 30% 95%;
+
+    --primary: 270 70% 65%; /* Vibrant Purple */
     --primary-foreground: 0 0% 100%; /* White text on primary */
-    --secondary: 210 10% 25%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 210 10% 25%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 36 100% 50%; /* Bright Orange (remains bright) */
+
+    --secondary: 220 10% 20%; /* Darker Shade */
+    --secondary-foreground: 210 30% 95%;
+
+    --muted: 220 10% 25%;
+    --muted-foreground: 220 10% 60%;
+
+    --accent: 330 80% 60%; /* Vibrant Pink/Magenta */
     --accent-foreground: 0 0% 100%; /* White text on accent */
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 210 10% 30%;
-    --input: 210 10% 30%;
-    --ring: 217 89% 70%; /* Adjusted ring for dark theme */
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 10% 30%; /* Darker border */
+    --input: 220 10% 18%; /* Dark input background */
+    --ring: 270 70% 75%; /* Lighter Purple for ring */
+
+    --chart-1: 270 70% 65%;
+    --chart-2: 330 80% 60%;
+    --chart-3: 210 70% 55%;
+    --chart-4: 180 65% 60%;
+    --chart-5: 30 75% 55%;
+
     --radius: 0.5rem;
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -42,8 +52,10 @@ body {
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
-  }
 
+    /* Specific background for the game screen for clarity */
+    --game-screen-background: 205 50% 35%; /* Medium-Dark Blue */
+  }
 }
 
 @layer base {
@@ -72,18 +84,18 @@ body {
 
 .explosion-line {
   position: absolute;
-  height: 2px; 
-  background-color: currentColor; 
+  height: 2px;
+  background-color: currentColor;
   top: 50%;
   left: 50%;
-  transform-origin: 0% 50%; 
+  transform-origin: 0% 50%;
   animation: explode-line 0.3s forwards;
 }
 
 
 @keyframes big-ball-bonus-animation {
   0% {
-    transform: translate(-50%, -50%) scale(3); 
+    transform: translate(-50%, -50%) scale(3);
     opacity: 0.5;
   }
   50% {
@@ -104,7 +116,7 @@ body {
 
 .life-lost {
   animation: life-lost-animation 0.5s forwards;
-  background-color: transparent !important; 
+  background-color: transparent !important;
   border-color: transparent !important;
 }
 
@@ -117,4 +129,26 @@ body {
 .ball-pulse-animation {
   animation: pulse-ball 0.3s ease-in-out;
   transform-origin: center;
+}
+
+/* Animated Gradient Background for non-game pages */
+@keyframes animated-gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-page-gradient {
+  background: linear-gradient(-45deg, hsl(260, 60%, 25%), hsl(280, 60%, 30%), hsl(320, 60%, 35%), hsl(240,60%,25%));
+  background-size: 400% 400%;
+  animation: animated-gradient 15s ease infinite;
+}
+
+/* Gradient Text for Titles */
+.text-gradient-purple-pink {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-purple-400;
+}
+
+.bg-game-screen {
+  background-color: hsl(var(--game-screen-background));
 }

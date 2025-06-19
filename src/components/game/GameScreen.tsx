@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -70,21 +69,19 @@ const GameScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (showInstantExplodeBanner) {
+    if (showInstantExplodeBanner && instantExplodeUserPreference) { // Only show banner if user preference is also on
       const timer = setTimeout(() => {
         setShowInstantExplodeBanner(false);
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [showInstantExplodeBanner]);
+  }, [showInstantExplodeBanner, instantExplodeUserPreference]);
 
   useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        setGameStarted(false);
-      }
+    if (!authLoading && !user) { // Check !user for logout
+      setGameStarted(false); // Return to main start screen
       setIsInstantExplodeModeActive(false);
-      setInstantExplodeUserPreference(true); // Reset user preference for the mode
+      setInstantExplodeUserPreference(true); 
       setShowInstantExplodeBanner(false);
       setScoreAreaClickCount(0);
     }
@@ -190,12 +187,12 @@ const GameScreen: React.FC = () => {
                 if (user) {
                   updateUserHighScore(score).then(() => {
                     setTimeout(() => {
-                      toast({ title: "New High Score!", description: `Your new high score ${score} is saved online.`});
+                      toast({ title: "New High Score!", description: `Your new high score ${score} is saved online.`, className: "bg-accent text-accent-foreground border-accent/50" });
                     },0);
                   });
                 } else {
                   setTimeout(() => {
-                     toast({ title: "New Local High Score!", description: `Your new high score is ${score}. Log in to save online!`});
+                     toast({ title: "New Local High Score!", description: `Your new high score is ${score}. Log in to save online!`, className: "bg-primary text-primary-foreground border-primary/50" });
                   },0);
                 }
               }
@@ -216,7 +213,7 @@ const GameScreen: React.FC = () => {
     if (currentScore > 500) return 'rainbow-gradient';
     const TIER_SCORE = 30;
     const tier = Math.floor(currentScore / TIER_SCORE);
-    const colors = ['#FFFFFF', '#FFFF00', '#90EE90', '#ADD8E6', '#FFC0CB', '#E6E6FA', '#FFA500'];
+    const colors = ['#FFFFFF', '#FFFF00', '#90EE90', '#ADD8E6', '#FFC0CB', '#E6E6FA', '#FFA500']; // Consider theme-appropriate colors if needed
     return colors[tier % colors.length] || '#FFFFFF';
   }, []);
 
@@ -299,11 +296,11 @@ const GameScreen: React.FC = () => {
 
     const instantModeActivatedRandomly = Math.random() < 0.1;
     setIsInstantExplodeModeActive(instantModeActivatedRandomly);
-    setInstantExplodeUserPreference(true); // Always default to on if activated
+    setInstantExplodeUserPreference(true); 
     if (instantModeActivatedRandomly) {
       setShowInstantExplodeBanner(true);
       setTimeout(() => {
-          toast({ title: "⚡ Instant Explode Mode Active! ⚡", description: "Hover or tap balls to pop them instantly!", duration: 5000 });
+          toast({ title: "⚡ Instant Explode Mode Active! ⚡", description: "Hover or tap balls to pop them instantly!", duration: 5000, className: "bg-primary text-primary-foreground border-primary/50" });
       }, 0);
     } else {
       setShowInstantExplodeBanner(false);
@@ -321,18 +318,20 @@ const GameScreen: React.FC = () => {
   };
 
   const handleScoreAreaClick = useCallback(() => {
-    if (!gameStarted || gameOver || isInstantExplodeModeActive) return; // Prevent activation if mode already triggered
-
+    if (!gameStarted || gameOver ) return; 
+    
     setBallPulseAnimationTrigger(prev => prev + 1);
+
+    if (isInstantExplodeModeActive) return; // Don't allow re-activation if already active
 
     setScoreAreaClickCount(prevCount => {
       const newCount = prevCount + 1;
       if (newCount >= SECRET_CLICK_TARGET) {
         setIsInstantExplodeModeActive(true);
-        setInstantExplodeUserPreference(true); // Activate and set preference to on
+        setInstantExplodeUserPreference(true); 
         setShowInstantExplodeBanner(true);
         setTimeout(() => {
-            toast({ title: "🤫 Secret Activated!", description: "Instant Explode Mode is ON!", duration: 5000 });
+            toast({ title: "🤫 Secret Activated!", description: "Instant Explode Mode is ON!", duration: 5000, className: "bg-accent text-accent-foreground border-accent/50" });
         }, 0);
         return 0;
       }
@@ -355,9 +354,13 @@ const GameScreen: React.FC = () => {
   if (!gameStarted) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background">
-        <h1 className="text-6xl sm:text-7xl font-headline text-primary mb-4 tracking-tight font-bold">Skyfall Boomer</h1>
-        <p className="text-xl text-foreground/80 mb-8">High Score: {currentOverallHighScore}</p>
-        <Button onClick={startGame} size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-2xl py-4 px-8 shadow-lg hover:shadow-xl transition-shadow">
+        <h1 className="text-6xl sm:text-7xl font-headline text-gradient-purple-pink mb-4 tracking-tight font-bold">Skyfall Boomer</h1>
+        <p className="text-xl text-foreground/80 mb-8">High Score: <span className="font-semibold text-accent">{currentOverallHighScore}</span></p>
+        <Button 
+          onClick={startGame} 
+          size="lg" 
+          className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-bold text-2xl py-4 px-8 shadow-lg hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
+        >
           Start Game
         </Button>
       </div>
@@ -368,7 +371,7 @@ const GameScreen: React.FC = () => {
     <div
       ref={gameAreaRef}
       className={cn(
-        "relative w-screen h-screen overflow-hidden bg-background select-none",
+        "relative w-screen h-screen overflow-hidden select-none", // bg-background removed, parent main has bg-game-screen
         effectiveInstantExplodeMode && "cursor-crosshair"
       )}
       aria-label="Game Area"
@@ -410,8 +413,8 @@ const GameScreen: React.FC = () => {
       )}
 
       {isInstantExplodeModeActive && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[60] bg-card p-3 rounded-lg shadow-xl border border-border flex items-center space-x-3">
-          <Label htmlFor="instant-explode-toggle" className="flex items-center space-x-2 cursor-pointer text-sm font-medium text-foreground">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[60] bg-card/80 backdrop-blur-sm p-3 rounded-lg shadow-xl border border-border/50 flex items-center space-x-3">
+          <Label htmlFor="instant-explode-toggle" className="flex items-center space-x-2 cursor-pointer text-sm font-medium text-foreground/90">
             {instantExplodeUserPreference ? <Zap className="h-5 w-5 text-accent" /> : <ZapOff className="h-5 w-5 text-muted-foreground" />}
             <span>Instant Explode</span>
           </Label>
@@ -425,7 +428,7 @@ const GameScreen: React.FC = () => {
       )}
 
       {showInstantExplodeBanner && instantExplodeUserPreference && (
-        <div className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 sm:px-6 sm:py-3 rounded-lg shadow-xl z-[60] text-center transition-opacity duration-500 opacity-100 animate-pulse">
+         <div className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 bg-primary/90 backdrop-blur-sm text-primary-foreground px-4 py-2 sm:px-6 sm:py-3 rounded-lg shadow-xl z-[60] text-center transition-opacity duration-500 opacity-100 animate-pulse border border-primary/70">
           <p className="text-md sm:text-lg font-semibold">⚡ Instant Explode Mode Active! ⚡</p>
           <p className="text-xs sm:text-sm">Hover or tap balls to pop them instantly!</p>
         </div>

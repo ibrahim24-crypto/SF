@@ -9,6 +9,12 @@ export default {
   ],
   theme: {
     extend: {
+      backdropBlur: {
+        xs: '2px',
+        sm: '4px',
+        md: '8px',
+        lg: '12px',
+      },
       fontFamily: {
         body: ['Poppins', 'sans-serif'],
         headline: ['Poppins', 'sans-serif'],
@@ -65,11 +71,15 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        'game-screen': {
+          DEFAULT: 'hsl(var(--game-screen-background))',
+        }
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        xl: 'calc(var(--radius) + 4px)', // Added for login card
       },
       keyframes: {
         'accordion-down': {
@@ -110,7 +120,12 @@ export default {
           '0%': { transform: 'scale(1)', opacity: '1' },
           '50%': { transform: 'scale(1.5) rotate(15deg)', opacity: '0.7' },
           '100%': { transform: 'scale(0.5) rotate(-15deg)', opacity: '0' },
-        }
+        },
+        'animated-gradient': {
+            '0%': { 'background-position': '0% 50%' },
+            '50%': { 'background-position': '100% 50%' },
+            '100%': { 'background-position': '0% 50%' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -119,7 +134,11 @@ export default {
         'explode-line': 'explode-line 0.3s forwards',
         'big-ball-bonus': 'big-ball-bonus-animation 0.7s ease-out forwards',
         'life-lost': 'life-lost-animation 0.5s forwards',
+        'animated-gradient': 'animated-gradient 15s ease infinite',
       },
+      backgroundSize: {
+        '400%': '400% 400%',
+      }
     },
   },
   plugins: [require('tailwindcss-animate')],
