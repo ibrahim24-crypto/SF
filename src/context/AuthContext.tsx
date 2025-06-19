@@ -13,7 +13,7 @@ export interface UserProfile {
   uid: string;
   email: string | null;
   username: string | null;
-  photoURL?: string | null; // Can now be a Data URI
+  photoURL?: string | null;
   highScore?: number;
   isAnonymous?: boolean;
 }
@@ -45,21 +45,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userDocSnap.exists()) {
           setUser({ uid: firebaseUser.uid, ...userDocSnap.data() } as UserProfile);
         } else {
-          // This case handles users who signed up but for some reason their Firestore doc wasn't created
-          // Or for new users signing in via Google/Email for the first time.
           if (!firebaseUser.isAnonymous) {
             const newUserProfile: UserProfile = {
               uid: firebaseUser.uid,
               email: firebaseUser.email,
               username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-              photoURL: firebaseUser.photoURL, // Can be null or from provider
+              photoURL: firebaseUser.photoURL,
               highScore: 0,
               isAnonymous: false,
             };
             await setDoc(userDocRef, { ...newUserProfile, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
             setUser(newUserProfile);
           }
-          // Anonymous users' profiles are created during their specific signInAnonymously flow.
         }
       } else {
         setUser(null);
@@ -125,7 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         uid: userCredential.user.uid,
         email: userCredential.user.email,
         username: username,
-        photoURL: userCredential.user.photoURL, // Initially null for email sign-up
+        photoURL: userCredential.user.photoURL,
         highScore: 0,
         isAnonymous: false,
       };
@@ -173,7 +170,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         uid: firebaseUser.uid,
         email: null, 
         username: pseudo,
-        photoURL: null, // Anonymous users start with no photo
+        photoURL: null,
         highScore: 0,
         isAnonymous: true,
       };
@@ -212,23 +209,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("Error updating high score in Firebase:", error);
-        // Consider only showing toast if it's a critical failure or for user feedback.
-        // toast({ title: "Error Syncing Score", description: "Could not update high score in Firebase.", variant: "destructive" });
       }
     }
-  };
-
-  const convertFileToDataURI = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        resolve(reader.result as string);
-      };
-      reader.onerror = (error) => {
-        reject(error);
-      };
-      reader.readAsDataURL(file);
-    });
   };
 
   const updateUserProfileData = async (data: { newUsername?: string; newAvatarFile?: File }): Promise<{ success: boolean; message: string }> => {
@@ -244,8 +226,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const userDocRef = doc(db, "users", currentUser.uid);
     const updates: Partial<UserProfile> = {};
     let authProfileUpdates: { displayName?: string; photoURL?: string } = {};
+    let newPhotoURL: string | undefined = undefined;
 
     try {
+      // Handle Avatar Update with Cloudinary
+      if (data.newAvatarFile) {
+        const formData = new FormData();
+        formData.append('file', data.newAvatarFile);
+        formData.append('upload_preset', 'unsigned_preset');
+        formData.append('folder', 'samples/ecommerce'); // Optional
+
+        const cloudinaryCloudName = 'dioraeoev'; // Your Cloudinary cloud name
+        const cloudinaryUploadURL = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/upload`;
+
+        const response = await fetch(cloudinaryUploadURL, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Cloudinary upload failed:', errorData);
+          setLoading(false);
+          return { success: false, message: errorData.error?.message || "Avatar upload failed." };
+        }
+
+        const cloudinaryData = await response.json();
+        if (cloudinaryData.secure_url) {
+          newPhotoURL = cloudinaryData.secure_url;
+          updates.photoURL = newPhotoURL;
+          authProfileUpdates.photoURL = newPhotoURL;
+        } else {
+          console.error('Cloudinary response missing secure_url:', cloudinaryData);
+          setLoading(false);
+          return { success: false, message: "Avatar upload succeeded but URL was not returned." };
+        }
+      }
+
       // Handle Username Update
       if (data.newUsername && data.newUsername !== user?.username) {
         const currentUsername = data.newUsername.trim();
@@ -258,10 +275,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const q = query(usersRef, where('username', '==', currentUsername));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
-          // Check if the found user is the current user (in case of case change or something)
           let conflict = false;
-          querySnapshot.forEach(doc => {
-            if (doc.id !== currentUser.uid) {
+          querySnapshot.forEach(docSnap => { // Renamed 'doc' to 'docSnap' to avoid conflict
+            if (docSnap.id !== currentUser.uid) {
               conflict = true;
             }
           });
@@ -273,23 +289,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         updates.username = currentUsername;
         authProfileUpdates.displayName = currentUsername;
       }
-
-      // Handle Avatar Update by converting to Data URI
-      if (data.newAvatarFile) {
-        if (data.newAvatarFile.size > 1024 * 500) { // Limit to ~500KB for Data URI
-          setLoading(false);
-          return { success: false, message: "Avatar image is too large. Please choose a smaller file (under 500KB)." };
-        }
-        try {
-          const dataUri = await convertFileToDataURI(data.newAvatarFile);
-          updates.photoURL = dataUri;
-          authProfileUpdates.photoURL = dataUri; // Firebase Auth photoURL can also take Data URIs
-        } catch (error) {
-          console.error("Error converting file to Data URI:", error);
-          setLoading(false);
-          return { success: false, message: "Could not process avatar image." };
-        }
-      }
       
       const batch = writeBatch(db);
 
@@ -300,13 +299,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
          batch.update(userDocRef, { ...updates, updatedAt: serverTimestamp() });
       }
       
-      await batch.commit();
+      if (Object.keys(updates).length > 0 || Object.keys(authProfileUpdates).length > 0) {
+        await batch.commit();
+      }
+
 
       setUser(prevUser => {
         if (!prevUser) return null;
         let updatedUser = { ...prevUser };
         if (updates.username) updatedUser.username = updates.username;
-        if (updates.photoURL) updatedUser.photoURL = updates.photoURL;
+        // Use newPhotoURL if available from Cloudinary, otherwise keep existing photoURL.
+        // This is important because if only username is changed, photoURL in updates might be undefined.
+        if (newPhotoURL !== undefined) {
+            updatedUser.photoURL = newPhotoURL;
+        } else if (updates.photoURL !== undefined) { // Fallback for potential direct photoURL update (though Cloudinary flow is primary)
+            updatedUser.photoURL = updates.photoURL;
+        }
         return updatedUser;
       });
 
@@ -334,3 +342,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
