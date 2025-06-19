@@ -64,7 +64,6 @@ export default function ProfilePage() {
   }
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (user?.isAnonymous) return;
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       setSelectedAvatarFile(file);
@@ -77,13 +76,8 @@ export default function ProfilePage() {
   };
 
   const handleSaveChanges = async () => {
-    if (!user || user.isAnonymous) {
-      toast({ title: "Guest Profile", description: "Guest profiles cannot be saved with these changes.", variant: "destructive" });
-      setIsEditing(false); // Exit edit mode for guests if they somehow trigger save
-      return;
-    }
     const trimmedUsername = editableUsername.trim();
-    if (!trimmedUsername && !selectedAvatarFile) {
+    if (!trimmedUsername && !selectedAvatarFile && user && trimmedUsername === user.username && !selectedAvatarFile) {
       toast({ title: "No Changes", description: "No changes were made to save.", variant: "default" });
       setIsEditing(false);
       return;
@@ -96,7 +90,7 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     const result = await updateUserProfileData({
-      newUsername: (trimmedUsername && trimmedUsername !== user.username) ? trimmedUsername : undefined,
+      newUsername: (trimmedUsername && user && trimmedUsername !== user.username) ? trimmedUsername : undefined,
       newAvatarFile: selectedAvatarFile || undefined,
     });
     setIsSaving(false);
@@ -126,7 +120,6 @@ export default function ProfilePage() {
   };
 
   const triggerFileSelect = () => {
-    if (user?.isAnonymous) return;
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -143,7 +136,6 @@ export default function ProfilePage() {
             {isEditing ? (
               <button
                 onClick={triggerFileSelect}
-                disabled={isGuest}
                 className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer rounded-full disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:opacity-50"
                 aria-label="Change profile picture"
               >
@@ -174,7 +166,6 @@ export default function ProfilePage() {
                 onChange={handleAvatarChange}
                 accept="image/png, image/jpeg, image/gif, image/webp"
                 className="hidden"
-                disabled={isGuest}
               />
             )}
           </div>
@@ -186,9 +177,8 @@ export default function ProfilePage() {
                 type="text"
                 value={editableUsername}
                 onChange={(e) => setEditableUsername(e.target.value)}
-                placeholder={isGuest ? "Guest username (cannot change)" : "Enter new username"}
-                className="w-full text-center text-2xl font-bold bg-input border-border text-foreground focus:ring-primary disabled:bg-muted/50 disabled:cursor-not-allowed"
-                disabled={isGuest}
+                placeholder="Enter new username"
+                className="w-full text-center text-2xl font-bold bg-input border-border text-foreground focus:ring-primary"
               />
             </div>
           ) : (
@@ -212,7 +202,7 @@ export default function ProfilePage() {
               <Button
                 onClick={handleSaveChanges}
                 className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={isSaving || isGuest}
+                disabled={isSaving}
               >
                 {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
                 Save Changes
@@ -263,3 +253,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

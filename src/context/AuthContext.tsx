@@ -45,6 +45,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userDocSnap.exists()) {
           setUser({ uid: firebaseUser.uid, ...userDocSnap.data() } as UserProfile);
         } else {
+          // This case should ideally only happen for newly signed-up non-anonymous users
+          // or if an anonymous user's record was somehow deleted post-auth.
+          // For anonymous users created via signInAnonymously, the doc is created immediately.
           if (!firebaseUser.isAnonymous) { 
             const newUserProfile: UserProfile = {
               uid: firebaseUser.uid,
@@ -52,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               username: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
               photoURL: firebaseUser.photoURL,
               highScore: 0,
-              isAnonymous: false,
+              isAnonymous: false, // Explicitly false for new non-anonymous users
             };
             await setDoc(userDocRef, { ...newUserProfile, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
             setUser(newUserProfile);
@@ -217,10 +220,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!auth.currentUser) {
       return { success: false, message: "No user logged in." };
     }
-    if (user?.isAnonymous) {
-      return { success: false, message: "Guest users cannot update their profile." };
-    }
-
+    
     setLoading(true);
     const currentUser = auth.currentUser;
     const userDocRef = doc(db, "users", currentUser.uid);
@@ -292,16 +292,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const batch = writeBatch(db);
 
       if (Object.keys(authProfileUpdates).length > 0 || (trimmedUsername && trimmedUsername !== user?.username) || newPhotoURL !== undefined) {
-        if (Object.keys(authProfileUpdates).length > 0) {
+        // For anonymous users, Firebase Auth displayName/photoURL cannot be directly updated like this.
+        // The updates will primarily be in Firestore.
+        if (!currentUser.isAnonymous && Object.keys(authProfileUpdates).length > 0) {
           await updateProfile(currentUser, authProfileUpdates);
         }
-        if (Object.keys(firestoreUpdates).length > 1) { 
+        
+        if (Object.keys(firestoreUpdates).length > 1) { //
              batch.update(userDocRef, firestoreUpdates);
              await batch.commit();
-        } else if (Object.keys(authProfileUpdates).length > 0 && Object.keys(firestoreUpdates).length === 1) {
+        } else if ( (!currentUser.isAnonymous && Object.keys(authProfileUpdates).length > 0) && Object.keys(firestoreUpdates).length === 1) {
+             // Case where only auth was updated but we still want to timestamp firestore
              batch.update(userDocRef, firestoreUpdates); 
              await batch.commit();
         }
+
 
         setUser(prevUser => {
           if (!prevUser) return null;
@@ -340,3 +345,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
