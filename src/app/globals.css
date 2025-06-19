@@ -8,53 +8,53 @@ body {
 
 @layer base {
   :root {
-    --background: 220 15% 12%; /* Very Dark Blue/Gray */
-    --foreground: 210 30% 95%; /* Light Gray/White */
+    /* PRD Inspired Light Theme */
+    --background: 207 88% 94%; /* Light Blue #E3F2FD */
+    --foreground: 210 10% 25%; /* Dark Gray for text on light background */
 
-    --card: 220 15% 10%; /* Darker for card base before opacity/blur */
-    --card-foreground: 210 30% 95%;
+    --card: 0 0% 100%; /* White cards */
+    --card-foreground: 210 10% 25%; /* Dark Gray for text on cards */
 
-    --popover: 220 15% 8%;
-    --popover-foreground: 210 30% 95%;
+    --popover: 0 0% 100%; /* White popovers */
+    --popover-foreground: 210 10% 25%;
 
-    --primary: 270 70% 65%; /* Vibrant Purple */
-    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --primary: 217 90% 61%; /* Vivid Blue #4285F4 */
+    --primary-foreground: 0 0% 100%; /* White text on primary blue */
 
-    --secondary: 220 10% 20%; /* Darker Shade */
-    --secondary-foreground: 210 30% 95%;
+    --secondary: 207 60% 88%; /* Lighter variant of primary/background blue */
+    --secondary-foreground: 210 10% 25%; /* Dark gray text on secondary */
 
-    --muted: 220 10% 25%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 210 30% 80%; /* Light gray for muted text */
+    --muted-foreground: 210 20% 50%; /* Slightly darker gray for muted foreground */
 
-    --accent: 330 80% 60%; /* Vibrant Pink/Magenta */
-    --accent-foreground: 0 0% 100%; /* White text on accent */
+    --accent: 36 100% 50%; /* Bright Orange #FF9800 */
+    --accent-foreground: 0 0% 100%; /* White text on orange accent */
 
-    --destructive: 0 60% 50%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 70% 55%; /* A suitable red for destructive actions */
+    --destructive-foreground: 0 0% 100%; /* White text on destructive */
 
-    --border: 220 10% 30%; /* Darker border */
-    --input: 220 10% 18%; /* Dark input background */
-    --ring: 270 70% 75%; /* Lighter Purple for ring */
+    --border: 210 20% 85%; /* Light gray border */
+    --input: 0 0% 100%; /* White input background */
+    --ring: 217 90% 70%; /* Lighter primary blue for focus rings */
 
-    --chart-1: 270 70% 65%;
-    --chart-2: 330 80% 60%;
-    --chart-3: 210 70% 55%;
-    --chart-4: 180 65% 60%;
-    --chart-5: 30 75% 55%;
+    --chart-1: 217 90% 61%; /* primary */
+    --chart-2: 36 100% 50%; /* accent */
+    --chart-3: 180 65% 60%; /* A cyan/teal */
+    --chart-4: 270 70% 65%; /* A purple */
+    --chart-5: 30 75% 55%; /* Another orange/yellow */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    /* Sidebar colors (can be adjusted if sidebar is re-introduced with specific styling) */
+    /* For now, let them inherit general theme or be very simple */
+    --sidebar-background: 207 80% 90%; /* Slightly darker than main bg */
+    --sidebar-foreground: 210 10% 25%;
+    --sidebar-primary: 217 90% 61%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-
-    /* Specific background for the game screen for clarity */
-    --game-screen-background: 205 50% 35%; /* Medium-Dark Blue */
+    --sidebar-accent: 207 60% 85%;
+    --sidebar-accent-foreground: 210 10% 25%;
+    --sidebar-border: 210 20% 80%;
+    --sidebar-ring: 217 90% 70%;
   }
 }
 
@@ -85,7 +85,7 @@ body {
 .explosion-line {
   position: absolute;
   height: 2px;
-  background-color: currentColor;
+  background-color: currentColor; /* Will use ball color, or primary for rainbow */
   top: 50%;
   left: 50%;
   transform-origin: 0% 50%;
@@ -131,7 +131,7 @@ body {
   transform-origin: center;
 }
 
-/* Animated Gradient Background for non-game pages */
+/* Animated Gradient Background for non-game pages (Cyan to Blue) */
 @keyframes animated-gradient {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -139,16 +139,17 @@ body {
 }
 
 .animated-page-gradient {
-  background: linear-gradient(-45deg, hsl(260, 60%, 25%), hsl(280, 60%, 30%), hsl(320, 60%, 35%), hsl(240,60%,25%));
+  background: linear-gradient(-45deg, hsl(180, 65%, 55%), hsl(200, 75%, 60%), hsl(217, 80%, 65%), hsl(210, 70%, 50%));
   background-size: 400% 400%;
   animation: animated-gradient 15s ease infinite;
 }
 
-/* Gradient Text for Titles */
-.text-gradient-purple-pink {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-accent to-purple-400;
+/* Gradient Text for Titles (Primary Blue to Cyan/Orange) */
+.text-gradient-theme {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-cyan-500 to-blue-500;
 }
 
+/* Game screen specific background */
 .bg-game-screen {
-  background-color: hsl(var(--game-screen-background));
+  background-color: hsl(var(--background)); /* This is Light Blue #E3F2FD from PRD */
 }

@@ -10,9 +10,9 @@ interface ScoreDisplayProps {
 const ScoreDisplay: React.FC<ScoreDisplayProps> = ({ score, highScore, onScoreAreaClick }) => {
   return (
     <div
-      className="bg-primary/80 text-primary-foreground p-2 sm:p-3 rounded-lg shadow-md flex flex-col space-y-0.5 sm:space-y-1 items-start select-none"
+      className="text-primary-foreground p-0 flex flex-col items-start select-none" // Removed bg, padding is on GameHeader container
       onClick={onScoreAreaClick}
-      style={{ cursor: onScoreAreaClick ? 'default' : 'auto' }} // Default cursor unless no click handler
+      style={{ cursor: onScoreAreaClick ? 'default' : 'auto' }}
       aria-label="Score and high score display"
     >
       <h2 className="text-lg sm:text-2xl font-headline font-semibold">Score: {score}</h2>

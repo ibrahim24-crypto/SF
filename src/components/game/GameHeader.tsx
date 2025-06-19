@@ -39,6 +39,10 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState, o
 
   const displayHighScore = user?.highScore !== undefined ? Math.max(highScore, user.highScore) : highScore;
 
+  // Use primary-foreground (white) for text on primary background (vivid blue)
+  const textColorClass = "text-primary-foreground";
+  const hoverBgClass = "hover:bg-primary/70"; // Slightly darker vivid blue on hover
+
   return (
     <header className="absolute top-0 left-0 right-0 z-10 p-2 sm:p-4">
       <div className="flex items-center justify-between w-full mb-0.5 sm:mb-1">
@@ -48,18 +52,18 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState, o
           ) : user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-1 h-auto text-primary-foreground hover:bg-primary/70">
+                <Button variant="ghost" className={cn("p-1 h-auto", textColorClass, hoverBgClass)}>
                   <div className="flex items-center space-x-1 sm:space-x-2">
                     {user.photoURL ? (
-                      <Image src={user.photoURL} alt={user.username || "User"} width={28} height={28} className="rounded-full w-6 h-6 sm:w-7 sm:h-7" />
+                      <Image src={user.photoURL} alt={user.username || "User"} width={28} height={28} className="rounded-full w-6 h-6 sm:w-7 sm:h-7 border border-primary-foreground/50" />
                     ) : (
-                      <UserIcon className="h-6 w-6 sm:h-7 sm:w-7 p-0.5 rounded-full bg-primary/50" />
+                      <UserIcon className={cn("h-6 w-6 sm:h-7 sm:w-7 p-0.5 rounded-full bg-primary/30", textColorClass)} />
                     )}
-                    <span className="font-medium text-sm sm:text-base hidden sm:inline">{user.username || 'Profile'}</span>
+                    <span className={cn("font-medium text-sm sm:text-base hidden sm:inline", textColorClass)}>{user.username || 'Profile'}</span>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
+              <DropdownMenuContent align="start" className="bg-card text-card-foreground border-border">
                 <DropdownMenuLabel>{user.username || user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <Link href="/profile" passHref><DropdownMenuItem>View Profile</DropdownMenuItem></Link>
@@ -72,7 +76,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState, o
             </DropdownMenu>
           ) : (
             <Link href="/login" passHref>
-              <Button variant="ghost" className="text-primary-foreground hover:bg-primary/70 text-sm sm:text-base px-2 sm:px-3">
+              <Button variant="ghost" className={cn("text-sm sm:text-base px-2 sm:px-3", textColorClass, hoverBgClass)}>
                 <LogIn className="mr-1 sm:mr-2 h-4 w-4 sm:h-5 sm:w-5" /> Login
               </Button>
             </Link>
@@ -83,7 +87,7 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState, o
           onClick={toggleCollapse}
           variant="ghost"
           size="icon"
-          className="text-primary-foreground hover:bg-primary/70 active:bg-primary/60 p-1 rounded-md h-7 w-7 sm:h-8 sm:w-8"
+          className={cn("p-1 rounded-md h-7 w-7 sm:h-8 sm:w-8", textColorClass, hoverBgClass, "active:bg-primary/60")}
           aria-label={isCollapsed ? "Show game details" : "Hide game details"}
           aria-expanded={!isCollapsed}
         >
@@ -92,8 +96,8 @@ const GameHeader: React.FC<GameHeaderProps> = ({ score, highScore, livesState, o
       </div>
       <div
         className={cn(
-          "flex items-start justify-between w-full overflow-hidden transition-all duration-300 ease-in-out",
-          isCollapsed ? "max-h-0 opacity-0" : "max-h-48 opacity-100 mt-0.5 sm:mt-1"
+          "flex items-start justify-between w-full overflow-hidden transition-all duration-300 ease-in-out bg-primary/80 p-2 sm:p-3 rounded-lg shadow-md",
+          isCollapsed ? "max-h-0 opacity-0 !p-0" : "max-h-48 opacity-100 mt-0.5 sm:mt-1"
         )}
         aria-hidden={isCollapsed}
       >

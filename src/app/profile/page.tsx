@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
@@ -13,7 +14,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center animated-page-gradient">
+      <div className="flex min-h-screen items-center justify-center animated-page-gradient p-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
@@ -26,16 +27,16 @@ export default function ProfilePage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 animated-page-gradient">
-      <Card className="w-full max-w-md text-center bg-card/80 backdrop-blur-md rounded-xl shadow-2xl border border-border/50 p-4">
+      <Card className="w-full max-w-md text-center bg-card shadow-xl rounded-xl p-4">
         <CardHeader>
-          <div className="mx-auto mb-4 h-28 w-28 rounded-full overflow-hidden border-4 border-primary bg-muted flex items-center justify-center shadow-lg">
+          <div className="mx-auto mb-4 h-28 w-28 rounded-full overflow-hidden border-4 border-primary bg-secondary flex items-center justify-center shadow-lg">
             {user.photoURL ? (
               <Image src={user.photoURL} alt={user.username || 'User'} width={112} height={112} className="object-cover" />
             ) : (
               <User className="h-20 w-20 text-primary" />
             )}
           </div>
-          <CardTitle className="text-3xl font-bold text-gradient-purple-pink tracking-tight">{user.username || 'User Profile'}</CardTitle>
+          <CardTitle className="text-3xl font-bold text-gradient-theme tracking-tight">{user.username || 'User Profile'}</CardTitle>
           <CardDescription className="text-muted-foreground">{user.email}</CardDescription>
         </CardHeader>
         <CardContent className="mt-4">
@@ -44,24 +45,24 @@ export default function ProfilePage() {
           </p>
         </CardContent>
         <CardFooter className="flex flex-col space-y-3 mt-6">
-          <Button 
-            onClick={() => router.push('/')} 
-            variant="outline" 
-            className="w-full py-3 bg-input/50 hover:bg-input/70 text-foreground border-border/70 hover:border-primary/50"
+          <Button
+            onClick={() => router.push('/')}
+            variant="outline"
+            className="w-full py-3 bg-background hover:bg-secondary text-foreground border-border hover:border-primary"
           >
             <Gamepad2 className="mr-2 h-5 w-5" /> Back to Game
           </Button>
-           <Button 
-            onClick={() => router.push('/leaderboard')} 
-            variant="outline" 
-            className="w-full py-3 bg-input/50 hover:bg-input/70 text-foreground border-border/70 hover:border-primary/50"
+           <Button
+            onClick={() => router.push('/leaderboard')}
+            variant="outline"
+            className="w-full py-3 bg-background hover:bg-secondary text-foreground border-border hover:border-primary"
            >
             <Crown className="mr-2 h-5 w-5" /> View Leaderboard
           </Button>
-          <Button 
-            onClick={logOut} 
-            variant="destructive" 
-            className="w-full py-3 bg-destructive/80 hover:bg-destructive text-destructive-foreground"
+          <Button
+            onClick={logOut}
+            variant="destructive"
+            className="w-full py-3"
           >
             <LogOut className="mr-2 h-5 w-5" /> Log Out
           </Button>

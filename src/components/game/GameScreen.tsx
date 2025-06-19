@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -69,7 +70,7 @@ const GameScreen: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (showInstantExplodeBanner && instantExplodeUserPreference) { // Only show banner if user preference is also on
+    if (showInstantExplodeBanner && instantExplodeUserPreference) {
       const timer = setTimeout(() => {
         setShowInstantExplodeBanner(false);
       }, 5000);
@@ -78,10 +79,10 @@ const GameScreen: React.FC = () => {
   }, [showInstantExplodeBanner, instantExplodeUserPreference]);
 
   useEffect(() => {
-    if (!authLoading && !user) { // Check !user for logout
-      setGameStarted(false); // Return to main start screen
+    if (!authLoading && !user) {
+      setGameStarted(false);
       setIsInstantExplodeModeActive(false);
-      setInstantExplodeUserPreference(true); 
+      setInstantExplodeUserPreference(true);
       setShowInstantExplodeBanner(false);
       setScoreAreaClickCount(0);
     }
@@ -128,22 +129,23 @@ const GameScreen: React.FC = () => {
           const lastLifeElement = livesElements[livesElements.length -1];
 
           if (lastLifeElement) {
-            const livesDisplayRect = lastLifeElement.parentElement?.parentElement?.getBoundingClientRect();
+            const livesDisplayRect = lastLifeElement.parentElement?.getBoundingClientRect();
             if (livesDisplayRect) {
-                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8;
+                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8; // Adjusted for new layout
                 const targetY = livesDisplayRect.top + livesDisplayRect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
                  setBonusBallTarget({ x: window.innerWidth - 100, y: 50 });
             }
-          } else {
-            const livesContainer = document.querySelector('.flex.space-x-1.items-center.bg-primary\\/80, .flex.space-x-2.items-center.bg-primary\\/80');
+          } else { // If no lives elements are found (e.g., 0 lives and gaining one)
+            const livesContainer = gameAreaRef.current?.querySelector('.flex.items-start.justify-between .flex.flex-wrap'); // More specific selector
             if(livesContainer) {
                 const rect = livesContainer.getBoundingClientRect();
-                const targetX = rect.left + BALL_RADIUS * 0.6;
+                const targetX = rect.left + BALL_RADIUS * 0.6; // Target near where lives would appear
                 const targetY = rect.top + rect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
+                 // Fallback if lives container is not found
                 setBonusBallTarget({ x: window.innerWidth - 100, y: 50 });
             }
           }
@@ -187,13 +189,13 @@ const GameScreen: React.FC = () => {
                 if (user) {
                   updateUserHighScore(score).then(() => {
                     setTimeout(() => {
-                      toast({ title: "New High Score!", description: `Your new high score ${score} is saved online.`, className: "bg-accent text-accent-foreground border-accent/50" });
+                      toast({ title: "New High Score!", description: `Your new high score ${score} is saved online.`, className: "bg-accent text-accent-foreground border-accent" });
                     },0);
                   });
                 } else {
-                  setTimeout(() => {
-                     toast({ title: "New Local High Score!", description: `Your new high score is ${score}. Log in to save online!`, className: "bg-primary text-primary-foreground border-primary/50" });
-                  },0);
+                   setTimeout(() => {
+                     toast({ title: "New Local High Score!", description: `Your new high score is ${score}. Log in to save online!`, className: "bg-primary text-primary-foreground border-primary" });
+                   },0);
                 }
               }
               setGameOver(true);
@@ -213,8 +215,9 @@ const GameScreen: React.FC = () => {
     if (currentScore > 500) return 'rainbow-gradient';
     const TIER_SCORE = 30;
     const tier = Math.floor(currentScore / TIER_SCORE);
-    const colors = ['#FFFFFF', '#FFFF00', '#90EE90', '#ADD8E6', '#FFC0CB', '#E6E6FA', '#FFA500']; // Consider theme-appropriate colors if needed
-    return colors[tier % colors.length] || '#FFFFFF';
+    // Using PRD accent and primary for some tiers, plus other light theme friendly colors
+    const colors = ['hsl(var(--primary))', 'hsl(var(--accent))', '#87CEFA', '#FFB6C1', '#98FB98', '#F0E68C', '#E0FFFF'];
+    return colors[tier % colors.length] || 'hsl(var(--primary))';
   }, []);
 
   const generateBall = useCallback(() => {
@@ -296,11 +299,11 @@ const GameScreen: React.FC = () => {
 
     const instantModeActivatedRandomly = Math.random() < 0.1;
     setIsInstantExplodeModeActive(instantModeActivatedRandomly);
-    setInstantExplodeUserPreference(true); 
+    setInstantExplodeUserPreference(true);
     if (instantModeActivatedRandomly) {
       setShowInstantExplodeBanner(true);
       setTimeout(() => {
-          toast({ title: "⚡ Instant Explode Mode Active! ⚡", description: "Hover or tap balls to pop them instantly!", duration: 5000, className: "bg-primary text-primary-foreground border-primary/50" });
+          toast({ title: "⚡ Instant Explode Mode Active! ⚡", description: "Hover or tap balls to pop them instantly!", duration: 5000, className: "bg-primary text-primary-foreground border-primary" });
       }, 0);
     } else {
       setShowInstantExplodeBanner(false);
@@ -318,26 +321,26 @@ const GameScreen: React.FC = () => {
   };
 
   const handleScoreAreaClick = useCallback(() => {
-    if (!gameStarted || gameOver ) return; 
-    
+    if (!gameStarted || gameOver ) return;
+
     setBallPulseAnimationTrigger(prev => prev + 1);
 
-    if (isInstantExplodeModeActive) return; // Don't allow re-activation if already active
+    if (isInstantExplodeModeActive && instantExplodeUserPreference) return;
 
     setScoreAreaClickCount(prevCount => {
       const newCount = prevCount + 1;
       if (newCount >= SECRET_CLICK_TARGET) {
         setIsInstantExplodeModeActive(true);
-        setInstantExplodeUserPreference(true); 
+        setInstantExplodeUserPreference(true);
         setShowInstantExplodeBanner(true);
         setTimeout(() => {
-            toast({ title: "🤫 Secret Activated!", description: "Instant Explode Mode is ON!", duration: 5000, className: "bg-accent text-accent-foreground border-accent/50" });
+            toast({ title: "🤫 Secret Activated!", description: "Instant Explode Mode is ON!", duration: 5000, className: "bg-accent text-accent-foreground border-accent" });
         }, 0);
         return 0;
       }
       return newCount;
     });
-  }, [gameStarted, gameOver, isInstantExplodeModeActive, toast, setIsInstantExplodeModeActive, setInstantExplodeUserPreference, setShowInstantExplodeBanner, setScoreAreaClickCount, setBallPulseAnimationTrigger]);
+  }, [gameStarted, gameOver, isInstantExplodeModeActive, instantExplodeUserPreference, toast, setIsInstantExplodeModeActive, setInstantExplodeUserPreference, setShowInstantExplodeBanner, setScoreAreaClickCount, setBallPulseAnimationTrigger]);
 
 
   if (!isClient) {
@@ -354,12 +357,12 @@ const GameScreen: React.FC = () => {
   if (!gameStarted) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-background">
-        <h1 className="text-6xl sm:text-7xl font-headline text-gradient-purple-pink mb-4 tracking-tight font-bold">Skyfall Boomer</h1>
+        <h1 className="text-6xl sm:text-7xl font-headline text-gradient-theme mb-4 tracking-tight font-bold">Skyfall Boomer</h1>
         <p className="text-xl text-foreground/80 mb-8">High Score: <span className="font-semibold text-accent">{currentOverallHighScore}</span></p>
-        <Button 
-          onClick={startGame} 
-          size="lg" 
-          className="bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-bold text-2xl py-4 px-8 shadow-lg hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
+        <Button
+          onClick={startGame}
+          size="lg"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-2xl py-4 px-8 shadow-lg hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
         >
           Start Game
         </Button>
@@ -371,7 +374,7 @@ const GameScreen: React.FC = () => {
     <div
       ref={gameAreaRef}
       className={cn(
-        "relative w-screen h-screen overflow-hidden select-none", // bg-background removed, parent main has bg-game-screen
+        "relative w-screen h-screen overflow-hidden select-none",
         effectiveInstantExplodeMode && "cursor-crosshair"
       )}
       aria-label="Game Area"
@@ -395,7 +398,7 @@ const GameScreen: React.FC = () => {
 
       {isBonusAnimating && bonusBallTarget && (
         <div
-          className="fixed rounded-full bg-accent z-[100]"
+          className="fixed rounded-full bg-accent z-[100]" // Use accent color for bonus ball
           style={{
             width: `${BALL_RADIUS * 2}px`,
             height: `${BALL_RADIUS * 2}px`,
@@ -413,8 +416,8 @@ const GameScreen: React.FC = () => {
       )}
 
       {isInstantExplodeModeActive && (
-        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[60] bg-card/80 backdrop-blur-sm p-3 rounded-lg shadow-xl border border-border/50 flex items-center space-x-3">
-          <Label htmlFor="instant-explode-toggle" className="flex items-center space-x-2 cursor-pointer text-sm font-medium text-foreground/90">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[60] bg-card/90 backdrop-blur-sm p-3 rounded-lg shadow-xl border border-border flex items-center space-x-3">
+          <Label htmlFor="instant-explode-toggle" className="flex items-center space-x-2 cursor-pointer text-sm font-medium text-card-foreground">
             {instantExplodeUserPreference ? <Zap className="h-5 w-5 text-accent" /> : <ZapOff className="h-5 w-5 text-muted-foreground" />}
             <span>Instant Explode</span>
           </Label>
@@ -423,12 +426,13 @@ const GameScreen: React.FC = () => {
             checked={instantExplodeUserPreference}
             onCheckedChange={setInstantExplodeUserPreference}
             aria-label="Toggle Instant Explode Mode"
+            className="data-[state=checked]:bg-accent data-[state=unchecked]:bg-muted"
           />
         </div>
       )}
 
       {showInstantExplodeBanner && instantExplodeUserPreference && (
-         <div className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 bg-primary/90 backdrop-blur-sm text-primary-foreground px-4 py-2 sm:px-6 sm:py-3 rounded-lg shadow-xl z-[60] text-center transition-opacity duration-500 opacity-100 animate-pulse border border-primary/70">
+         <div className="fixed bottom-20 sm:bottom-24 left-1/2 -translate-x-1/2 bg-primary/95 backdrop-blur-sm text-primary-foreground px-4 py-2 sm:px-6 sm:py-3 rounded-lg shadow-xl z-[60] text-center transition-opacity duration-500 opacity-100 animate-pulse border border-primary">
           <p className="text-md sm:text-lg font-semibold">⚡ Instant Explode Mode Active! ⚡</p>
           <p className="text-xs sm:text-sm">Hover or tap balls to pop them instantly!</p>
         </div>
