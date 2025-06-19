@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
-import { Loader2, User, LogOut, Crown, Gamepad2, ShieldQuestion, Edit3, Save, XCircle, UploadCloud } from 'lucide-react';
+import { Loader2, User, LogOut, Crown, Gamepad2, Edit3, Save, XCircle, UploadCloud } from 'lucide-react';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -64,12 +64,13 @@ export default function ProfilePage() {
   }
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (user?.isAnonymous) return;
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
       setSelectedAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAvatarPreview(reader.result as string); // Show local preview
+        setAvatarPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -77,7 +78,8 @@ export default function ProfilePage() {
 
   const handleSaveChanges = async () => {
     if (!user || user.isAnonymous) {
-      toast({ title: "Error", description: "Cannot update guest profile.", variant: "destructive" });
+      toast({ title: "Guest Profile", description: "Guest profiles cannot be saved with these changes.", variant: "destructive" });
+      setIsEditing(false); // Exit edit mode for guests if they somehow trigger save
       return;
     }
     const trimmedUsername = editableUsername.trim();
@@ -91,7 +93,6 @@ export default function ProfilePage() {
       toast({ title: "Validation Error", description: "Username must be between 3 and 20 characters.", variant: "destructive" });
       return;
     }
-
 
     setIsSaving(true);
     const result = await updateUserProfileData({
@@ -114,8 +115,10 @@ export default function ProfilePage() {
 
   const handleCancelEdit = () => {
     setIsEditing(false);
-    setEditableUsername(user.username || '');
-    setAvatarPreview(user.photoURL || null); 
+    if (user) {
+      setEditableUsername(user.username || '');
+      setAvatarPreview(user.photoURL || null); 
+    }
     setSelectedAvatarFile(null);
     if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -123,24 +126,25 @@ export default function ProfilePage() {
   };
 
   const triggerFileSelect = () => {
+    if (user?.isAnonymous) return;
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
 
-  const canEditProfile = !user.isAnonymous;
   const displayAvatar = avatarPreview || user.photoURL;
-
+  const isGuest = user.isAnonymous;
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 animated-page-gradient">
       <Card className="w-full max-w-md text-center bg-card/80 backdrop-blur-md shadow-2xl rounded-xl p-4 border border-border/50">
         <CardHeader>
           <div className="relative mx-auto mb-4 h-32 w-32 rounded-full overflow-hidden border-4 border-primary bg-secondary flex items-center justify-center shadow-lg">
-            {isEditing && canEditProfile ? (
+            {isEditing ? (
               <button
                 onClick={triggerFileSelect}
-                className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer rounded-full"
+                disabled={isGuest}
+                className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 text-white opacity-0 hover:opacity-100 transition-opacity duration-200 cursor-pointer rounded-full disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:opacity-50"
                 aria-label="Change profile picture"
               >
                 <UploadCloud className="h-10 w-10 mb-1" />
@@ -159,21 +163,22 @@ export default function ProfilePage() {
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                {user.isAnonymous ? <ShieldQuestionIcon /> : <UserIconPlaceholder />}
+                {isGuest ? <ShieldQuestionIcon /> : <UserIconPlaceholder />}
               </div>
             )}
 
-            {isEditing && canEditProfile && (
+            {isEditing && (
               <input
                 type="file"
                 ref={fileInputRef}
                 onChange={handleAvatarChange}
                 accept="image/png, image/jpeg, image/gif, image/webp"
                 className="hidden"
+                disabled={isGuest}
               />
             )}
           </div>
-          {isEditing && canEditProfile ? (
+          {isEditing ? (
             <div className="mb-3">
               <Label htmlFor="username" className="sr-only">Username</Label>
               <Input
@@ -181,18 +186,19 @@ export default function ProfilePage() {
                 type="text"
                 value={editableUsername}
                 onChange={(e) => setEditableUsername(e.target.value)}
-                placeholder="Enter new username"
-                className="w-full text-center text-2xl font-bold bg-input border-border text-foreground focus:ring-primary"
+                placeholder={isGuest ? "Guest username (cannot change)" : "Enter new username"}
+                className="w-full text-center text-2xl font-bold bg-input border-border text-foreground focus:ring-primary disabled:bg-muted/50 disabled:cursor-not-allowed"
+                disabled={isGuest}
               />
             </div>
           ) : (
             <CardTitle className="text-3xl font-bold text-gradient-theme tracking-tight">
               {user.username || 'User Profile'}
-              {user.isAnonymous && <span className="block text-sm font-normal text-muted-foreground">(Guest Account)</span>}
+              {isGuest && <span className="block text-sm font-normal text-muted-foreground">(Guest Account)</span>}
             </CardTitle>
           )}
           <CardDescription className="text-muted-foreground">
-            {user.email ? user.email : user.isAnonymous ? 'Guest Account - No email' : 'Email not available'}
+            {user.email ? user.email : isGuest ? 'Guest Account - No email' : 'Email not available'}
           </CardDescription>
         </CardHeader>
         <CardContent className="mt-4">
@@ -201,12 +207,12 @@ export default function ProfilePage() {
           </p>
         </CardContent>
         <CardFooter className="flex flex-col space-y-3 mt-6">
-          {isEditing && canEditProfile ? (
+          {isEditing ? (
             <>
               <Button
                 onClick={handleSaveChanges}
                 className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground"
-                disabled={isSaving}
+                disabled={isSaving || isGuest}
               >
                 {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
                 Save Changes
@@ -222,15 +228,13 @@ export default function ProfilePage() {
             </>
           ) : (
             <>
-              {canEditProfile && (
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  variant="outline"
-                  className="w-full py-3 bg-secondary/50 hover:bg-secondary/70 text-foreground border-border hover:border-primary"
-                >
-                  <Edit3 className="mr-2 h-5 w-5" /> Edit Profile
-                </Button>
-              )}
+              <Button
+                onClick={() => setIsEditing(true)}
+                variant="outline"
+                className="w-full py-3 bg-secondary/50 hover:bg-secondary/70 text-foreground border-border hover:border-primary"
+              >
+                <Edit3 className="mr-2 h-5 w-5" /> Edit Profile
+              </Button>
               <Button
                 onClick={() => router.push('/')}
                 variant="outline"
