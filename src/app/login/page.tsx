@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Loader2, Chrome } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
@@ -26,6 +27,16 @@ const signupSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 type SignupFormData = z.infer<typeof signupSchema>;
+
+const GoogleGLogo = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.99C17.74 15.62 17.07 16.76 16.07 17.49V20.2H19.83C21.66 18.59 22.56 15.71 22.56 12.25Z" fill="#4285F4"/>
+    <path d="M12 23C15.24 23 17.95 21.92 19.83 20.2L16.07 17.49C14.99 18.22 13.62 18.66 12 18.66C9.09 18.66 6.62 16.81 5.72 14.21H1.87V17.03C3.73 20.68 7.53 23 12 23Z" fill="#34A853"/>
+    <path d="M5.72 14.21C5.51 13.64 5.38 13.03 5.38 12.4C5.38 11.77 5.51 11.16 5.72 10.59V7.77H1.87C0.67 10.06 0 12.61 0 15.35C0 18.09 0.67 20.64 1.87 22.93L5.72 20.11C5.72 14.21 5.72 14.21 5.72 14.21Z" fill="#FBBC05"/>
+    <path d="M12 5.34C13.72 5.34 15.14 5.97 16.18 6.95L19.92 3.21C17.95 1.39 15.24 0 12 0C7.53 0 3.73 2.32 1.87 5.97L5.72 8.79C6.62 6.19 9.09 5.34 12 5.34Z" fill="#EA4335"/>
+  </svg>
+);
+
 
 export default function LoginPage() {
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -50,10 +61,10 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && !authLoading) { // Ensure auth state is settled
       router.push('/profile'); 
     }
-  }, [user, router]);
+  }, [user, authLoading, router]);
 
   const onLoginSubmit: SubmitHandler<LoginFormData> = async (data) => {
     await logInWithEmail(data.email, data.password);
@@ -75,8 +86,10 @@ export default function LoginPage() {
     );
   }
 
+  // This second check is to prevent flashing the form if a user is already logged in
+  // and the useEffect for redirection hasn't fired yet.
   if (user) {
-    return null;
+    return null; 
   }
   
   const isLoading = isLoginSubmitting || isSignupSubmitting || authLoading;
@@ -184,7 +197,7 @@ export default function LoginPage() {
             onClick={handleGoogleSignIn} 
             disabled={isLoading}
           >
-             {isLoading && !(isLoginSubmitting || isSignupSubmitting) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Chrome className="mr-2 h-4 w-4 text-primary" />}
+             {isLoading && !(isLoginSubmitting || isSignupSubmitting) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleGLogo />}
             Google
           </Button>
         </CardContent>
@@ -202,3 +215,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
