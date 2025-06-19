@@ -45,10 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (userDocSnap.exists()) {
           setUser({ uid: firebaseUser.uid, ...userDocSnap.data() } as UserProfile);
         } else {
-          // This case should ideally not happen for already signed-in users unless DB was cleared.
-          // For new users (Google/Email), profile is created at sign-in/sign-up.
-          // For anonymous, it's also created at sign-in.
-          if (!firebaseUser.isAnonymous) { // safety net for non-anonymous users missing a doc
+          if (!firebaseUser.isAnonymous) { 
             const newUserProfile: UserProfile = {
               uid: firebaseUser.uid,
               email: firebaseUser.email,
@@ -125,7 +122,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         uid: userCredential.user.uid,
         email: userCredential.user.email,
         username: username,
-        photoURL: userCredential.user.photoURL, // Will be null initially
+        photoURL: userCredential.user.photoURL, 
         highScore: 0,
         isAnonymous: false,
       };
@@ -212,7 +209,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("Error updating high score in Firebase:", error);
-        // Optionally, show a toast to the user
       }
     }
   };
@@ -235,7 +231,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const trimmedUsername = data.newUsername?.trim();
 
     try {
-      // Handle Avatar Update with Cloudinary
       if (data.newAvatarFile) {
         const formData = new FormData();
         formData.append('file', data.newAvatarFile);
@@ -269,7 +264,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Handle Username Update
       if (trimmedUsername && trimmedUsername !== user?.username) {
         if (trimmedUsername.length < 3 || trimmedUsername.length > 20) {
           setLoading(false);
@@ -297,41 +291,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const batch = writeBatch(db);
 
-      // Only proceed if there are actual changes
-      if (Object.keys(authProfileUpdates).length > 0 || (trimmedUsername && trimmedUsername !== user?.username) || newPhotoURL) {
+      if (Object.keys(authProfileUpdates).length > 0 || (trimmedUsername && trimmedUsername !== user?.username) || newPhotoURL !== undefined) {
         if (Object.keys(authProfileUpdates).length > 0) {
           await updateProfile(currentUser, authProfileUpdates);
         }
-        // Ensure firestoreUpdates has more than just updatedAt if we commit
-        if (Object.keys(firestoreUpdates).length > 1) { // more than just updatedAt
+        if (Object.keys(firestoreUpdates).length > 1) { 
              batch.update(userDocRef, firestoreUpdates);
              await batch.commit();
         } else if (Object.keys(authProfileUpdates).length > 0 && Object.keys(firestoreUpdates).length === 1) {
-            // If only auth profile was updated (e.g. photoURL) but firestoreUpdates only has updatedAt due to no username change
-            // We still want to update Firestore's `updatedAt` if an auth change happened.
-            // This case is somewhat covered if photoURL is an authProfileUpdate and firestoreUpdate.
-            // Simplified: if any authProfileUpdates or specific firestoreUpdates (username, photoURL) occurred, commit.
-            // The current firestoreUpdates construction already includes photoURL and username if they change.
-            // So, if firestoreUpdates has username or photoURL, it will be > 1.
-            // This handles the case where only photoURL changes, or only username changes, or both.
-             batch.update(userDocRef, firestoreUpdates); // At least updatedAt is here
+             batch.update(userDocRef, firestoreUpdates); 
              await batch.commit();
         }
-
 
         setUser(prevUser => {
           if (!prevUser) return null;
           return {
             ...prevUser,
             ...(trimmedUsername && trimmedUsername !== prevUser.username ? { username: trimmedUsername } : {}),
-            ...(newPhotoURL !== undefined ? { photoURL: newPhotoURL } : {}),
+            ...(newPhotoURL !== undefined ? { photoURL: newPhotoURL } : {photoURL: prevUser.photoURL}),
           };
         });
         setLoading(false);
         return { success: true, message: "Profile updated successfully!" };
       } else {
         setLoading(false);
-        return { success: true, message: "No changes to save." }; // Or handle as no-op
+        return { success: true, message: "No changes to save." };
       }
 
     } catch (error: any) {

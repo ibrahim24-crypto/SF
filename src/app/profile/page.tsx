@@ -66,9 +66,6 @@ export default function ProfilePage() {
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      // Cloudinary has its own file size limits, so we remove the client-side check for now.
-      // We can add a more generous client-side limit if desired, e.g., 5MB.
-      // For example: if (file.size > 5 * 1024 * 1024) { ... }
       setSelectedAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -84,11 +81,13 @@ export default function ProfilePage() {
       return;
     }
     const trimmedUsername = editableUsername.trim();
-    if (!trimmedUsername) {
-      toast({ title: "Validation Error", description: "Username cannot be empty.", variant: "destructive" });
+    if (!trimmedUsername && !selectedAvatarFile) {
+      toast({ title: "No Changes", description: "No changes were made to save.", variant: "default" });
+      setIsEditing(false);
       return;
     }
-    if (trimmedUsername.length < 3 || trimmedUsername.length > 20) {
+    
+    if (trimmedUsername && (trimmedUsername.length < 3 || trimmedUsername.length > 20)) {
       toast({ title: "Validation Error", description: "Username must be between 3 and 20 characters.", variant: "destructive" });
       return;
     }
@@ -96,7 +95,7 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     const result = await updateUserProfileData({
-      newUsername: trimmedUsername !== user.username ? trimmedUsername : undefined,
+      newUsername: (trimmedUsername && trimmedUsername !== user.username) ? trimmedUsername : undefined,
       newAvatarFile: selectedAvatarFile || undefined,
     });
     setIsSaving(false);
@@ -105,7 +104,6 @@ export default function ProfilePage() {
       toast({ title: "Profile Updated", description: result.message, className: "bg-primary text-primary-foreground border-primary" });
       setIsEditing(false);
       setSelectedAvatarFile(null); 
-      // Avatar preview will be updated via useEffect when user.photoURL changes
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -117,7 +115,7 @@ export default function ProfilePage() {
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditableUsername(user.username || '');
-    setAvatarPreview(user.photoURL || null); // Revert preview to original photoURL
+    setAvatarPreview(user.photoURL || null); 
     setSelectedAvatarFile(null);
     if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -131,9 +129,8 @@ export default function ProfilePage() {
   };
 
   const canEditProfile = !user.isAnonymous;
+  const displayAvatar = avatarPreview || user.photoURL;
 
-  // If editing and an avatar preview exists from a selected file, use that. Otherwise, use user.photoURL.
-  const displayAvatar = (isEditing && avatarPreview) ? avatarPreview : user.photoURL;
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 animated-page-gradient">
@@ -153,12 +150,12 @@ export default function ProfilePage() {
             
             {displayAvatar ? (
               <Image
-                src={displayAvatar} // This will show the local preview during editing or the Cloudinary URL
+                src={displayAvatar} 
                 alt={user.username || 'User'}
                 width={128}
                 height={128}
                 className="object-cover w-full h-full"
-                key={displayAvatar} // Add key to force re-render if URL changes
+                key={displayAvatar} 
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -262,4 +259,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
