@@ -14,7 +14,7 @@ interface GameOverOverlayProps {
 const GameOverOverlay: React.FC<GameOverOverlayProps> = ({ score, highScore, onRestart }) => {
   return (
     <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md text-center shadow-xl bg-card rounded-xl p-2">
+      <Card className="w-full max-w-md text-center bg-card shadow-xl rounded-xl p-2">
         <CardHeader className="p-6">
           <CardTitle className="text-4xl sm:text-5xl font-bold text-gradient-theme tracking-tight">Game Over!</CardTitle>
           <CardDescription className="text-md sm:text-lg text-muted-foreground mt-2">

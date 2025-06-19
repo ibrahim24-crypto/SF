@@ -79,8 +79,8 @@ const GameScreen: React.FC = () => {
   }, [showInstantExplodeBanner, instantExplodeUserPreference]);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      setGameStarted(false);
+    if (!authLoading && !user) { // User logged out
+      setGameStarted(false); // Go back to start screen
       setIsInstantExplodeModeActive(false);
       setInstantExplodeUserPreference(true);
       setShowInstantExplodeBanner(false);
@@ -131,21 +131,20 @@ const GameScreen: React.FC = () => {
           if (lastLifeElement) {
             const livesDisplayRect = lastLifeElement.parentElement?.getBoundingClientRect();
             if (livesDisplayRect) {
-                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8; // Adjusted for new layout
+                const targetX = livesDisplayRect.right + BALL_RADIUS * 0.6 + 8;
                 const targetY = livesDisplayRect.top + livesDisplayRect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
                  setBonusBallTarget({ x: window.innerWidth - 100, y: 50 });
             }
-          } else { // If no lives elements are found (e.g., 0 lives and gaining one)
-            const livesContainer = gameAreaRef.current?.querySelector('.flex.items-start.justify-between .flex.flex-wrap'); // More specific selector
+          } else {
+            const livesContainer = gameAreaRef.current?.querySelector('.flex.items-start.justify-between .flex.flex-wrap');
             if(livesContainer) {
                 const rect = livesContainer.getBoundingClientRect();
-                const targetX = rect.left + BALL_RADIUS * 0.6; // Target near where lives would appear
+                const targetX = rect.left + BALL_RADIUS * 0.6;
                 const targetY = rect.top + rect.height / 2;
                 setBonusBallTarget({ x: targetX, y: targetY });
             } else {
-                 // Fallback if lives container is not found
                 setBonusBallTarget({ x: window.innerWidth - 100, y: 50 });
             }
           }
@@ -211,14 +210,10 @@ const GameScreen: React.FC = () => {
     });
   }, [gameOver, score, currentOverallHighScore, user, updateUserHighScore, toast, setLivesState, setMissedBallStreak, setLocalHighScore, setGameOver, setBalls]);
 
-  const getBallColor = useCallback((currentScore: number): string => {
-    if (currentScore > 500) return 'rainbow-gradient';
-    const TIER_SCORE = 30;
-    const tier = Math.floor(currentScore / TIER_SCORE);
-    // Using PRD accent and primary for some tiers, plus other light theme friendly colors
-    const colors = ['hsl(var(--primary))', 'hsl(var(--accent))', '#87CEFA', '#FFB6C1', '#98FB98', '#F0E68C', '#E0FFFF'];
-    return colors[tier % colors.length] || 'hsl(var(--primary))';
-  }, []);
+  const getBallColor = useCallback((): string => {
+    if (score > 500) return 'rainbow-gradient';
+    return 'hsl(0 0% 100%)'; // White
+  }, [score]);
 
   const generateBall = useCallback(() => {
     if (!gameAreaRef.current || !isClient || gameOver) return;
@@ -230,11 +225,11 @@ const GameScreen: React.FC = () => {
       x: Math.random() * (100 - (BALL_RADIUS * 2 * 100 / gameAreaWidth)) + (BALL_RADIUS * 100 / gameAreaWidth),
       y: -BALL_RADIUS,
       radius: BALL_RADIUS,
-      color: getBallColor(score),
+      color: getBallColor(),
       isExploding: false,
     };
     setBalls((prevBalls) => [...prevBalls, newBallData]);
-  }, [score, getBallColor, isClient, gameOver, setBalls]);
+  }, [getBallColor, isClient, gameOver, setBalls, score]);
 
 
   useEffect(() => {
@@ -321,17 +316,17 @@ const GameScreen: React.FC = () => {
   };
 
   const handleScoreAreaClick = useCallback(() => {
-    if (!gameStarted || gameOver ) return;
+    if (!gameStarted || gameOver) return;
 
     setBallPulseAnimationTrigger(prev => prev + 1);
 
-    if (isInstantExplodeModeActive && instantExplodeUserPreference) return;
+    if (isInstantExplodeModeActive) return; // Don't allow re-triggering if already active via any means
 
     setScoreAreaClickCount(prevCount => {
       const newCount = prevCount + 1;
       if (newCount >= SECRET_CLICK_TARGET) {
         setIsInstantExplodeModeActive(true);
-        setInstantExplodeUserPreference(true);
+        setInstantExplodeUserPreference(true); // Also enable user preference by default
         setShowInstantExplodeBanner(true);
         setTimeout(() => {
             toast({ title: "🤫 Secret Activated!", description: "Instant Explode Mode is ON!", duration: 5000, className: "bg-accent text-accent-foreground border-accent" });
@@ -340,12 +335,12 @@ const GameScreen: React.FC = () => {
       }
       return newCount;
     });
-  }, [gameStarted, gameOver, isInstantExplodeModeActive, instantExplodeUserPreference, toast, setIsInstantExplodeModeActive, setInstantExplodeUserPreference, setShowInstantExplodeBanner, setScoreAreaClickCount, setBallPulseAnimationTrigger]);
+  }, [gameStarted, gameOver, isInstantExplodeModeActive, toast, setIsInstantExplodeModeActive, setInstantExplodeUserPreference, setShowInstantExplodeBanner, setScoreAreaClickCount, setBallPulseAnimationTrigger]);
 
 
   if (!isClient) {
     return (
-      <div className="flex items-center justify-center h-screen bg-background">
+      <div className="flex items-center justify-center h-screen bg-game-screen">
         <div className="text-center">
           <p className="text-2xl text-primary font-semibold">Loading Game...</p>
           <p className="text-foreground/80">Please wait a moment.</p>
@@ -356,7 +351,7 @@ const GameScreen: React.FC = () => {
 
   if (!gameStarted) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen bg-background">
+      <div className="flex flex-col items-center justify-center h-screen bg-game-screen">
         <h1 className="text-6xl sm:text-7xl font-headline text-gradient-theme mb-4 tracking-tight font-bold">Skyfall Boomer</h1>
         <p className="text-xl text-foreground/80 mb-8">High Score: <span className="font-semibold text-accent">{currentOverallHighScore}</span></p>
         <Button
@@ -374,7 +369,7 @@ const GameScreen: React.FC = () => {
     <div
       ref={gameAreaRef}
       className={cn(
-        "relative w-screen h-screen overflow-hidden select-none",
+        "relative w-screen h-screen overflow-hidden select-none bg-game-screen",
         effectiveInstantExplodeMode && "cursor-crosshair"
       )}
       aria-label="Game Area"
@@ -398,7 +393,7 @@ const GameScreen: React.FC = () => {
 
       {isBonusAnimating && bonusBallTarget && (
         <div
-          className="fixed rounded-full bg-accent z-[100]" // Use accent color for bonus ball
+          className="fixed rounded-full bg-accent z-[100]"
           style={{
             width: `${BALL_RADIUS * 2}px`,
             height: `${BALL_RADIUS * 2}px`,
