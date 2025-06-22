@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sf-iota.vercel.app/sitemap.xml
